@@ -12,7 +12,7 @@ def register(request):
             return redirect('home')
     else:
         form = CustomUserCreationForm()
-    return render(request, 'authapp/register.html', {'form': form})
+    return render(request, 'auth_app/register.html', {'form': form})
 
 def login_view(request):
     if request.method == 'POST':
@@ -23,7 +23,7 @@ def login_view(request):
             return redirect('home')
     else:
         form = AuthenticationForm()
-    return render(request, 'authapp/login.html', {'form': form})
+    return render(request, 'auth_app/login.html', {'form': form})
 
 def logout_view(request):
     logout(request)
