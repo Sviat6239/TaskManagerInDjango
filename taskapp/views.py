@@ -1,14 +1,14 @@
 from django.shortcuts import render
 
 def index(request):
-    return render(request, 'taskapp/index.html')
+    return render(request, 'index.html')
 
 def about(request):
-    return render(request, 'taskapp/about.html')
+    return render(request, 'about.html')
 
 def contact(request):
-    return render(request, 'taskapp/contact.html')
+    return render(request, 'contact.html')
 
 
 def dashboard(request):
-    return render(request, 'taskapp/dashboard.html')
+    return render(request, 'dashboard.html')
