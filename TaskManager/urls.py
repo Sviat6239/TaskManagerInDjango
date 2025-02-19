@@ -17,10 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from auth_app.views import register, login_view, logout_view
-from taskapp.views import index
+from taskapp.views import index, about, contact, dashboard, create_task, create_project, add_comment, add_issue, add_label
 
 urlpatterns = [
     path('', index, name='index'),
+    path('about/', about, name='about'),
+    path('contact/', contact, name='contact'),
+    path('dashboard/', dashboard, name='dashboard'),
+    path('create_task/', create_task, name='create_task'),
+    path('create_project/', create_project, name='create_project'),
+    path('add_comment/', add_comment, name='add_comment'),
+    path('add_issue/', add_issue, name='add_issue'),
+    path('add_label/', add_label, name='add_label'),
     path('admin/', admin.site.urls),
     path('register/', register, name='register'),
     path('login/', login_view, name='login'),
