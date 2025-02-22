@@ -1,10 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <aside>
+        <h2>Sidebar</h2>
+        <ul>
+            <li><a href="{% url 'create_task' %}">Create Task</a></li>
+            <li><a href="{% url 'create_project' %}">Create Project</a></li>
+            <li><a href="{% url 'add_comment' %}">Add Comment</a></li>
+            <li><a href="{% url 'add_issue' %}">Add Issue</a></li>
+            <li><a href="{% url 'add_label' %}">Add Label</a></li>
+        </ul>
+    </aside>
+    <!-- Здесь можно добавить дополнительный контент дашборда -->
+    <section>
+        <h2>Dashboard Content</h2>
+        <p>Welcome to your dashboard!</p>
+    </section>
+{% endblock %}

@@ -2,42 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}My Site{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Task Manager{% endblock %}</title>
+    {% load static %}
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>Welcome to My Site</h1>
-        <nav>
-            <ul>
-                <li><a href="{% url 'index' %}">Home</a></li>
-                <li><a href="{% url 'about' %}">About</a></li>
-                <li><a href="{% url 'contact' %}">Contact</a></li>
-                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <a class="navbar-brand" href="{% url 'index' %}">Task Manager</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'index' %}">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item {% if request.path == '/about/' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'about' %}">About</a>
+                </li>
+                <li class="nav-item {% if request.path == '/contact/' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'contact' %}">Contacts</a>
+                </li>
                 {% if user.is_authenticated %}
-                    <li><a href="{% url 'logout' %}">Logout</a></li>
+                    <li class="nav-item {% if request.path == '/dashboard/' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                    </li>
                 {% else %}
-                    <li><a href="{% url 'register' %}">Register</a></li>
-                    <li><a href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">Register</a>
+                    </li>
                 {% endif %}
             </ul>
-        </nav>
-    </header>
-    <aside>
-        <h2>Sidebar</h2>
-        <ul>
-            <li><a href="{% url 'create_task' %}">Create Task</a></li>
-            <li><a href="{% url 'create_project' %}">Create Project</a></li>
-            <li><a href="{% url 'add_comment' %}">Add Comment</a></li>
-            <li><a href="{% url 'add_issue' %}">Add Issue</a></li>
-            <li><a href="{% url 'add_label' %}">Add Label</a></li>
-        </ul>
-    </aside>
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
-    <footer>
-        <p>&copy; 2023 My Site</p>
+            <button class="btn btn-theme ml-auto" id="themeToggle">🌙 Dark Mode</button>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <div id="flash-message" class="flash-message"></div>
+        {% block content %}{% endblock %}
+    </div>
+    <footer class="footer text-center py-3 bg-light shadow-sm">
+        <div class="container">
+            <span class="text-muted">© 2025 Task Manager</span>
+            <div class="mt-3">
+                <p>For donations:</p>
+                <p>Bank Account: 1234567890</p>
+                <p>PayPal: donate@taskmanager.com</p>
+                <p>Thank you for your support!</p>
+            </div>
+        </div>
     </footer>
+    <button id="back-to-top" title="Back to Top">↑</button>
+    <script src="{% static 'js/script.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
