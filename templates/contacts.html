@@ -1,10 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}Contact Information{% endblock %}
+
+{% block content %}
+    <section class="contact-section py-5">
+        <div class="container">
+            <h2 class="display-4 text-center mb-4">Contact Information</h2>
+            <p class="lead text-center mb-5">Get in touch with Task Manager for support, inquiries, or collaboration. We’re here to help you manage your tasks effectively!</p>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Address</h5>
+                            <p class="card-text">📍</p>
+                            <a href="https://www.google.com/maps/place/Oficerska+15,+81-548+Gdynia/@54.4763179,18.5406696,17.82z/data=!4m6!3m5!1s0x46fda0912f59f32d:0x90ed26aab0da3161!8m2!3d54.4761401!4d18.5417186!16s%2Fg%2F11crqmz59s?authuser=0&entry=ttu" target="_blank" class="btn btn-primary animated-button">Open on Map</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Phone</h5>
+                            <p class="card-text">📞 </p>
+                            <button class="btn btn-primary animated-button" data-copy="+48 575 077 680" data-text="Copy Phone">Copy Phone</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Email</h5>
+                            <p class="card-text">✉️ support@taskmanager.com</p>
+                            <button class="btn btn-primary animated-button" data-copy="support@taskmanager.com" data-text="Copy Email">Copy Email</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Working Hours</h5>
+                            <p class="card-text">⏰ Monday–Friday: 9:00 AM – 5:00 PM (GMT+1)<br>Saturday–Sunday: Closed</p>
+                            <button class="btn btn-secondary animated-button" disabled>Office Hours</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="mt-5 text-center">Tasker is committed to providing exceptional support to ensure your productivity. If you need assistance with task management, have questions about features, or want to suggest improvements, don’t hesitate to contact us. Our team is ready to assist you via phone, email, or in-person visits. We also offer online resources, tutorials, and regular updates to help you make the most of our platform. Reach out today, and let’s collaborate to streamline your workflow!</p>
+        </div>
+    </section>
+{% endblock %}
