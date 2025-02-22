@@ -1,10 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}Contacts{% endblock %}
+
+{% block content %}
+    <section class="contact-section py-5">
+        <div class="container">
+            <h2 class="display-4 text-center mb-4">About</h2>
+            <p class="lead text-center mb-5">Learn more about Task Manager, our mission, and how we can assist you. Contact us for any questions or support needs, and our team will respond promptly.</p>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Our Mission</h5>
+                            <p class="card-text">Task Manager is dedicated to empowering individuals and teams to achieve productivity and efficiency through seamless task and project management. We aim to simplify workflows, enhance collaboration, and provide intuitive tools for organizing daily responsibilities.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">What We Offer</h5>
+                            <p class="card-text">Our platform offers features like task creation, project tracking, comment and issue management, file attachments, and customizable labels. With a modern, responsive design and support for light and dark modes, Task Manager ensures a personalized and user-friendly experience for freelancers, businesses, and students alike.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Support & Collaboration</h5>
+                            <p class="card-text">We prioritize your success by offering dedicated support through email, phone, and online resources. Our team is available to assist with troubleshooting, feature suggestions, and training to help you maximize Task Manager’s potential. Collaboration tools ensure your team stays connected and productive.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 interactive-card bg-green-highlight">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Get in Touch</h5>
+                            <p class="card-text">If you have questions, feedback, or need assistance, please reach out! We value your input and are committed to improving Task Manager to meet your needs. Visit our website for tutorials, updates, and more, or contact us directly to start a conversation about your productivity goals.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="mt-5 text-center">Task Manager is more than just a tool—it’s a partner in your journey to stay organized, focused, and efficient. Our goal is to transform the way you manage tasks and projects, making your workday smoother and more productive. Explore our features, join our community, and let us help you achieve your goals with confidence!</p>
+        </div>
+    </section>
+{% endblock %}

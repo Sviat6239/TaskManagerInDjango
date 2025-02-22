@@ -450,3 +450,31 @@ form input[type="password"]:focus {
     padding: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
+.interactive-card {
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.bg-green-highlight {
+    background-color: var(--accent2);
+    color: var(--text-color);
+}
+
+.dark-mode .interactive-card {
+    background-color: var(--accent2);
+    color: var(--text-color);
+}
+
+.card-title {
+    font-weight: bold;
+    margin-bottom: 15px;
+    transition: color 0.3s ease;
+}
+
+.card-text {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    transition: color 0.3s ease;
+}

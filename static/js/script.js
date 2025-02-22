@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
             themeToggle.textContent = '🌙 Dark Mode';
             localStorage.setItem('theme', 'light');
         }
+        updateCardStyles(); // Обновляем стили карточек при смене темы
     }
     themeToggle.addEventListener('click', () => {
         if (document.body.classList.contains('dark-mode')) {
@@ -26,13 +27,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
 
+    // Обработка кнопок с анимацией
     document.querySelectorAll('.animated-button').forEach(button => {
         button.addEventListener('click', () => {
             if (button.dataset.copy) {
-                copyToClipboard(button.dataset.copy);
+                const textToCopy = button.getAttribute('data-copy');
+                const originalText = button.getAttribute('data-text') || button.textContent;
+
+                copyToClipboard(textToCopy);
                 button.textContent = 'Copied!';
                 setTimeout(() => {
-                    button.textContent = button.dataset.text;
+                    button.textContent = originalText;
                 }, 2000);
             }
         });
@@ -46,6 +51,41 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // Обработка интерактивных карточек
+    const interactiveCards = document.querySelectorAll('.interactive-card');
+    function updateCardStyles() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        interactiveCards.forEach(card => {
+            card.dataset.defaultBg = isDarkMode ? 'var(--accent2)' : 'var(--accent2)';
+            card.dataset.hoverBg = isDarkMode ? '#397768' : '#f0cca8';
+            card.dataset.defaultColor = isDarkMode ? 'var(--text-color)' : 'var(--text-color)';
+            card.dataset.hoverColor = isDarkMode ? 'var(--button-text)' : 'var(--button-text)';
+        });
+    }
+
+    interactiveCards.forEach(card => {
+        card.addEventListener('mouseover', () => {
+            const hoverBg = card.dataset.hoverBg;
+            const hoverColor = card.dataset.hoverColor;
+            card.style.backgroundColor = hoverBg;
+            card.style.color = hoverColor;
+            card.style.transform = 'scale(1.05)';
+            card.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.2)';
+        });
+
+        card.addEventListener('mouseout', () => {
+            const defaultBg = card.dataset.defaultBg;
+            const defaultColor = card.dataset.defaultColor;
+            card.style.backgroundColor = defaultBg;
+            card.style.color = defaultColor;
+            card.style.transform = 'scale(1)';
+            card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+        });
+    });
+
+    updateCardStyles(); // Инициализация стилей карточек
+
+    // Копирование в буфер
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(function () {
             showFlashMessage('Copied: ' + text);
@@ -54,6 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Всплывающее сообщение
     function showFlashMessage(message) {
         const flashMessageDiv = document.getElementById('flash-message');
         flashMessageDiv.textContent = message;
@@ -63,6 +104,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 3000);
     }
 
+    // Интерактивные текстовые блоки
     const textBlocks = document.querySelectorAll('.text-block');
 
     textBlocks.forEach(block => {
@@ -83,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Add animation on scroll
+    // Анимация при скролле
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -96,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
         observer.observe(element);
     });
 
-    // Smooth scroll to top button
+    // Кнопка "Вверх"
     const backToTopButton = document.getElementById('back-to-top');
     window.addEventListener('scroll', () => {
         if (window.scrollY > 300) {
@@ -113,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Smooth scroll for internal links
+    // Плавная прокрутка для внутренних ссылок
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
@@ -123,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Modal popups
+    // Модальные окна
     const modalTriggers = document.querySelectorAll('[data-modal]');
     const modalCloseButtons = document.querySelectorAll('.modal-close');
 
@@ -140,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Tooltips
+    // Подсказки (Tooltips)
     const tooltipElements = document.querySelectorAll('[data-tooltip]');
     tooltipElements.forEach(element => {
         element.addEventListener('mouseover', function () {
@@ -154,11 +196,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         element.addEventListener('mouseout', function () {
-            document.querySelector('.tooltip').remove();
+            document.querySelector('.tooltip')?.remove();
         });
     });
 
-    // Image carousel
+    // Карусель изображений
     const carousels = document.querySelectorAll('.carousel');
     carousels.forEach(carousel => {
         const slides = carousel.querySelectorAll('.carousel-slide');
@@ -170,16 +212,40 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        carousel.querySelector('.carousel-next').addEventListener('click', () => {
+        carousel.querySelector('.carousel-next')?.addEventListener('click', () => {
             currentIndex = (currentIndex + 1) % slides.length;
             showSlide(currentIndex);
         });
 
-        carousel.querySelector('.carousel-prev').addEventListener('click', () => {
+        carousel.querySelector('.carousel-prev')?.addEventListener('click', () => {
             currentIndex = (currentIndex - 1 + slides.length) % slides.length;
             showSlide(currentIndex);
         });
 
         showSlide(currentIndex);
+    });
+
+    // Автофокус на первой форме
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        const firstInput = form.querySelector('input, select, textarea');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    });
+
+    // Валидация формы в реальном времени
+    forms.forEach(form => {
+        form.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', function () {
+                if (this.checkValidity()) {
+                    this.style.borderColor = '#28a745'; // Зеленый для валидного ввода
+                    this.style.boxShadow = '0 0 5px rgba(40, 167, 69, 0.5)';
+                } else {
+                    this.style.borderColor = '#dc3545'; // Красный для невалидного ввода
+                    this.style.boxShadow = '0 0 5px rgba(220, 53, 69, 0.5)';
+                }
+            });
+        });
     });
 });

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Task Manager{% endblock %}</title>
+    <title>{% block title %}Tasker{% endblock %}</title>
     {% load static %}
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-        <a class="navbar-brand" href="{% url 'index' %}">Task Manager</a>
+        <a class="navbar-brand" href="{% url 'index' %}">Tasker</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -50,11 +50,11 @@
     </div>
     <footer class="footer text-center py-3 bg-light shadow-sm">
         <div class="container">
-            <span class="text-muted">© 2025 Task Manager</span>
+            <span class="text-muted">© 2025 Tasker</span>
             <div class="mt-3">
                 <p>For donations:</p>
                 <p>Bank Account: 1234567890</p>
-                <p>PayPal: donate@taskmanager.com</p>
+                <p>PayPal: donate@tasker.com</p>
                 <p>Thank you for your support!</p>
             </div>
         </div>
