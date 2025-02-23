@@ -15,15 +15,23 @@ def contact(request):
 @login_required
 def dashboard(request):
     tasks = Task.objects.filter(user=request.user)
+    projects = Project.objects.filter(owner=request.user)
+    comments = Comment.objects.filter(user=request.user)
     issues = Issue.objects.filter(user=request.user)
+    labels = Label.objects.all()
     deadlines = Deadline.objects.filter(owner=request.user)
     notifications = Notification.objects.filter(user=request.user, read=False)
-    return render(request, 'dashboard.html', {
+
+    context = {
         'tasks': tasks,
+        'projects': projects,
+        'comments': comments,
         'issues': issues,
+        'labels': labels,
         'deadlines': deadlines,
-        'notifications': notifications
-    })
+        'notifications': notifications,
+    }
+    return render(request, 'dashboard.html', context)
 
 @login_required
 def create_task(request):

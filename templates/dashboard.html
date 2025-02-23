@@ -3,19 +3,257 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-    <aside>
-        <h2>Sidebar</h2>
-        <ul>
+<div class="dashboard-container">
+    <!-- Боковая панель -->
+    <aside class="sidebar">
+        <h2>Menu</h2>
+        <ul class="nav-list">
             <li><a href="{% url 'create_task' %}">Create Task</a></li>
             <li><a href="{% url 'create_project' %}">Create Project</a></li>
             <li><a href="{% url 'add_comment' %}">Add Comment</a></li>
             <li><a href="{% url 'add_issue' %}">Add Issue</a></li>
             <li><a href="{% url 'add_label' %}">Add Label</a></li>
+            <li><a href="{% url 'create_deadline' %}">Create Deadline</a></li>
+            <li><a href="{% url 'logout' %}">Logout</a></li>
         </ul>
     </aside>
-    <!-- Здесь можно добавить дополнительный контент дашборда -->
-    <section>
-        <h2>Dashboard Content</h2>
-        <p>Welcome to your dashboard!</p>
-    </section>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        <h1>Your Dashboard</h1>
+
+        <!-- Уведомления -->
+        <section class="notifications">
+            <h2>Notifications <span class="badge">{{ notifications.count }}</span></h2>
+            {% if notifications %}
+                <ul class="notification-list">
+                    {% for notification in notifications %}
+                        <li>{{ notification.message }} 
+                            <small>{{ notification.created_at|date:"M d, Y H:i" }}</small>
+                            {% if notification.task %}
+                                <a href="{% url 'update_task' notification.task.id %}">View Task</a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No new notifications.</p>
+            {% endif %}
+        </section>
+
+        <!-- Задачи (Trello-style) -->
+        <section class="task-board">
+            <h2>Tasks</h2>
+            <div class="board-columns">
+                {% for stage in "012" %}
+                    <div class="column">
+                        <h3>Stage {{ stage }}</h3>
+                        <ul class="task-list">
+                            {% for task in tasks %}
+                                {% if task.stage|stringformat:"s" == stage %}
+                                    <li class="task-card {% if task.completed %}completed{% endif %}">
+                                        <h4>{{ task.title }}</h4>
+                                        <p>{{ task.description|truncatewords:10 }}</p>
+                                        <small>Deadline: {{ task.deadline|date:"M d, Y" }}</small><br>
+                                        <div class="task-actions">
+                                            <a href="{% url 'update_task' task.id %}">Edit</a> |
+                                            <a href="{% url 'delete_task' task.id %}">Delete</a>
+                                        </div>
+                                    </li>
+                                {% endif %}
+                            {% empty %}
+                                <li>No tasks in this stage.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Проекты -->
+        <section class="projects">
+            <h2>Projects</h2>
+            {% if projects %}
+                <ul class="project-list">
+                    {% for project in projects %}
+                        <li class="project-card">
+                            <h4>{{ project.name }}</h4>
+                            <p>{{ project.description|truncatewords:10 }}</p>
+                            <small>Created: {{ project.created_at|date:"M d, Y" }}</small>
+                            <div class="project-actions">
+                                <a href="{% url 'update_project' project.id %}">Edit</a> |
+                                <a href="{% url 'delete_project' project.id %}">Delete</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No projects found.</p>
+            {% endif %}
+        </section>
+
+        <!-- Комментарии -->
+        <section class="comments">
+            <h2>Comments</h2>
+            {% if comments %}
+                <ul class="comment-list">
+                    {% for comment in comments %}
+                        <li class="comment-card">
+                            <p>{{ comment.text|truncatewords:10 }}</p>
+                            <small>Task: {{ comment.task.title }} | Created: {{ comment.created_at|date:"M d, Y" }}</small>
+                            <div class="comment-actions">
+                                <a href="{% url 'update_comment' comment.id %}">Edit</a> |
+                                <a href="{% url 'delete_comment' comment.id %}">Delete</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No comments found.</p>
+            {% endif %}
+        </section>
+
+        <!-- Проблемы -->
+        <section class="issues">
+            <h2>Issues</h2>
+            {% if issues %}
+                <ul class="issue-list">
+                    {% for issue in issues %}
+                        <li class="issue-card {% if issue.closed %}closed{% endif %}">
+                            <h4>{{ issue.text|truncatewords:10 }}</h4>
+                            <small>Task: {{ issue.task.title }} | Created: {{ issue.created_at|date:"M d, Y" }}</small>
+                            <div class="issue-actions">
+                                {% if issue.closed %}
+                                    <a href="{% url 'reopen_issue' issue.id %}">Reopen</a>
+                                {% else %}
+                                    <a href="{% url 'close_issue' issue.id %}">Close</a>
+                                {% endif %}
+                                | <a href="{% url 'update_issue' issue.id %}">Edit</a> |
+                                <a href="{% url 'delete_issue' issue.id %}">Delete</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No issues found.</p>
+            {% endif %}
+        </section>
+
+        <!-- Метки -->
+        <section class="labels">
+            <h2>Labels</h2>
+            {% if labels %}
+                <ul class="label-list">
+                    {% for label in labels %}
+                        <li class="label-card" style="background-color: {{ label.color|default:'#f0f0f0' }};">
+                            <h4>{{ label.name }}</h4>
+                            <div class="label-actions">
+                                <a href="{% url 'update_label' label.id %}">Edit</a> |
+                                <a href="{% url 'delete_label' label.id %}">Delete</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No labels found.</p>
+            {% endif %}
+        </section>
+
+        <!-- Дедлайны -->
+        <section class="deadlines">
+            <h2>Deadlines</h2>
+            {% if deadlines %}
+                <ul class="deadline-list">
+                    {% for deadline in deadlines %}
+                        <li class="deadline-card {% if deadline.is_completed %}completed{% endif %} {% if deadline.is_overdue %}overdue{% endif %}">
+                            <h4>{{ deadline.title }}</h4>
+                            <p>{{ deadline.description|truncatewords:10 }}</p>
+                            <small>Due: {{ deadline.due_date|date:"M d, Y H:i" }}</small><br>
+                            <div class="deadline-actions">
+                                <a href="{% url 'update_deadline' deadline.id %}">Edit</a> |
+                                <a href="{% url 'delete_deadline' deadline.id %}">Delete</a> |
+                                {% if deadline.is_completed %}
+                                    <a href="{% url 'reopen_deadline' deadline.id %}">Reopen</a>
+                                {% else %}
+                                    <a href="{% url 'close_deadline' deadline.id %}">Close</a>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No deadlines set.</p>
+            {% endif %}
+        </section>
+    </main>
+</div>
+<style>
+    .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .sidebar {
+        width: 250px;
+        background: #f4f4f4;
+        padding: 20px;
+        position: fixed;
+        height: 100%;
+    }
+    .nav-list {
+        list-style: none;
+        padding: 0;
+    }
+    .nav-list li {
+        margin: 10px 0;
+    }
+    .main-content {
+        flex-grow: 1;
+        padding: 20px;
+        margin-left: 250px;
+    }
+    .board-columns {
+        display: flex;
+        gap: 20px;
+    }
+    .column {
+        background: #f0f0f0;
+        padding: 10px;
+        width: 300px;
+        border-radius: 5px;
+    }
+    .task-list, .project-list, .comment-list, .issue-list, .label-list, .deadline-list {
+        list-style: none;
+        padding: 0;
+    }
+    .task-card, .project-card, .comment-card, .issue-card, .label-card, .deadline-card {
+        background: white;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    .task-card.completed, .issue-card.closed, .deadline-card.completed {
+        background: #e0ffe0;
+    }
+    .deadline-card.overdue {
+        border: 2px solid red;
+    }
+    .task-actions, .project-actions, .comment-actions, .issue-actions, .label-actions, .deadline-actions {
+        margin-top: 5px;
+    }
+    .notification-list {
+        list-style: none;
+        padding: 0;
+    }
+    .notification-list li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+    .badge {
+        background: #007bff;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+</style>
 {% endblock %}
