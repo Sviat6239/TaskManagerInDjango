@@ -17,18 +17,56 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from auth_app.views import register, login_view, logout_view
-from taskapp.views import index, about, contact, dashboard, create_task, create_project, add_comment, add_issue, add_label
-
+from taskapp.views import (
+    index, about, contact,
+    dashboard, create_task, update_task, delete_task,
+    create_project, update_project, delete_project,
+    add_comment, update_comment, delete_comment,
+    add_issue, update_issue, delete_issue,
+    add_label, update_label, delete_label,
+    close_issue, reopen_issue,
+    create_deadline, update_deadline, delete_deadline, close_deadline, reopen_deadline
+)
 urlpatterns = [
     path('', index, name='index'),
     path('about/', about, name='about'),
     path('contact/', contact, name='contact'),
     path('dashboard/', dashboard, name='dashboard'),
-    path('create_task/', create_task, name='create_task'),
-    path('create_project/', create_project, name='create_project'),
-    path('add_comment/', add_comment, name='add_comment'),
-    path('add_issue/', add_issue, name='add_issue'),
-    path('add_label/', add_label, name='add_label'),
+
+    # Task
+    path('dashboard/create_task/', create_task, name='create_task'),
+    path('dashboard/task/<int:task_id>/update/', update_task, name='update_task'),
+    path('dashboard/task/<int:task_id>/delete/', delete_task, name='delete_task'),
+
+    # Project
+    path('dashboard/create_project/', create_project, name='create_project'),
+    path('dashboard/project/<int:project_id>/update/', update_project, name='update_project'),
+    path('dashboard/project/<int:project_id>/delete/', delete_project, name='delete_project'),
+
+    # Comment
+    path('dashboard/add_comment/', add_comment, name='add_comment'),
+    path('dashboard/comment/<int:comment_id>/update/', update_comment, name='update_comment'),
+    path('dashboard/comment/<int:comment_id>/delete/', delete_comment, name='delete_comment'),
+
+    # Issue
+    path('dashboard/add_issue/', add_issue, name='add_issue'),
+    path('dashboard/issue/<int:issue_id>/update/', update_issue, name='update_issue'),
+    path('dashboard/issue/<int:issue_id>/delete/', delete_issue, name='delete_issue'),
+    path('dashboard/issue/<int:issue_id>/close/', close_issue, name='close_issue'),
+    path('dashboard/issue/<int:issue_id>/reopen/', reopen_issue, name='reopen_issue'),
+
+    # Label
+    path('dashboard/add_label/', add_label, name='add_label'),
+    path('dashboard/label/<int:label_id>/update/', update_label, name='update_label'),
+    path('dashboard/label/<int:label_id>/delete/', delete_label, name='delete_label'),
+
+    # Deadline
+    path('dashboard/create_deadline/', create_deadline, name='create_deadline'),
+    path('dashboard/deadline/<int:deadline_id>/update/', update_deadline, name='update_deadline'),
+    path('dashboard/deadline/<int:deadline_id>/delete/', delete_deadline, name='delete_deadline'),
+    path('dashboard/deadline/<int:deadline_id>/close/', close_deadline, name='close_deadline'),
+    path('dashboard/deadline/<int:deadline_id>/reopen/', reopen_deadline, name='reopen_deadline'),
+
     path('admin/', admin.site.urls),
     path('register/', register, name='register'),
     path('login/', login_view, name='login'),

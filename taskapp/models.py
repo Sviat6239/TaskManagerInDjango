@@ -57,7 +57,7 @@ class Project(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(CustomUser, related_name='projects', on_delete=models.CASCADE, help_text="Project owner")
     members = models.ManyToManyField(CustomUser, related_name='project_members', help_text="Project members")
-    tastks = models.ManyToManyField(Task, related_name='projects', help_text="Tasks in this project")
+    tasks = models.ManyToManyField(Task, related_name='projects', help_text="Tasks in this project")
 
     class Meta:
         verbose_name = "Project"
@@ -91,3 +91,41 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user} about {self.task}"
+
+class Deadline(models.Model):
+    title = models.CharField(max_length=100, help_text="Enter the deadline title")
+    due_date = models.DateTimeField(help_text="Enter the deadline due date")
+    is_completed = models.BooleanField(default=False, help_text="Mark as completed")
+    task = models.ForeignKey(
+        Task, 
+        related_name='deadlines', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        help_text="Related task (optional)"
+    )
+    owner = models.ForeignKey(
+        CustomUser, 
+        related_name='deadlines', 
+        on_delete=models.CASCADE, 
+        help_text="Deadline owner"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    description = models.TextField(
+        null=True, 
+        blank=True, 
+        help_text="Enter the deadline description (optional)"
+    )
+
+    class Meta:
+        verbose_name = "Deadline"
+        verbose_name_plural = "Deadlines"
+        ordering = ['due_date'] 
+
+    def __str__(self):
+        return f"{self.title} (Due: {self.due_date})"
+
+    def is_overdue(self):
+        from django.utils import timezone
+        return not self.is_completed and self.due_date < timezone.now()
