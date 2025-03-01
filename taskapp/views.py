@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm
+from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm, DeadlineForm
 from .models import Task, Comment, Project, Label, Issue, Notification, Deadline
 
 def index(request):
@@ -30,6 +30,12 @@ def dashboard(request):
         'labels': labels,
         'deadlines': deadlines,
         'notifications': notifications,
+        'task_form': TaskForm(),
+        'project_form': ProjectForm(),
+        'comment_form': CommentForm(),
+        'issue_form': IssueForm(),
+        'label_form': LabelForm(),
+        'deadline_form': DeadlineForm(),
     }
     return render(request, 'dashboard.html', context)
 
@@ -43,9 +49,7 @@ def create_task(request):
             task.save()
             form.save_m2m()
             return redirect('dashboard')
-    else:
-        form = TaskForm()
-    return render(request, 'create_task.html', {'form': form})
+    return redirect('dashboard')
 
 @login_required
 def update_task(request, task_id):
@@ -57,17 +61,14 @@ def update_task(request, task_id):
             task.save()
             form.save_m2m()
             return redirect('dashboard')
-    else:
-        form = TaskForm(instance=task)
-    return render(request, 'update_task.html', {'form': form, 'task': task})
+    return redirect('dashboard')
 
 @login_required
 def delete_task(request, task_id):
     task = get_object_or_404(Task, id=task_id, user=request.user)
     if request.method == 'POST':
         task.delete()
-        return redirect('dashboard')
-    return render(request, 'delete_task.html', {'task': task})
+    return redirect('dashboard')
 
 @login_required
 def create_project(request):
@@ -78,10 +79,34 @@ def create_project(request):
             project.owner = request.user
             project.save()
             form.save_m2m()
+
+            task_count = 0
+            while f'task_title_{task_count}' in request.POST:
+                title = request.POST.get(f'task_title_{task_count}')
+                description = request.POST.get(f'task_description_{task_count}', '')
+                deadline = request.POST.get(f'task_deadline_{task_count}')
+                stage = request.POST.get(f'task_stage_{task_count}', '0')
+                completed = f'task_completed_{task_count}' in request.POST
+
+                if title and deadline:
+                    try:
+                        task = Task(
+                            title=title,
+                            description=description,
+                            deadline=deadline,
+                            stage=int(stage),
+                            completed=completed,
+                            user=request.user
+                        )
+                        task.save()
+                        project.tasks.add(task)
+                    except ValueError as e:
+                        print(f"Error creating task {task_count}: {e}")
+
+                task_count += 1
+
             return redirect('dashboard')
-    else:
-        form = ProjectForm()
-    return render(request, 'create_project.html', {'form': form})
+    return redirect('dashboard')
 
 @login_required
 def update_project(request, project_id):
@@ -93,17 +118,14 @@ def update_project(request, project_id):
             project.save()
             form.save_m2m()
             return redirect('dashboard')
-    else:
-        form = ProjectForm(instance=project)
-    return render(request, 'update_project.html', {'form': form, 'project': project})
+    return redirect('dashboard')
 
 @login_required
 def delete_project(request, project_id):
     project = get_object_or_404(Project, id=project_id, owner=request.user)
     if request.method == 'POST':
         project.delete()
-        return redirect('dashboard')
-    return render(request, 'delete_project.html', {'project': project})
+    return redirect('dashboard')
 
 @login_required
 def add_comment(request):
@@ -114,9 +136,7 @@ def add_comment(request):
             comment.user = request.user
             comment.save()
             return redirect('dashboard')
-    else:
-        form = CommentForm()
-    return render(request, 'add_comment.html', {'form': form})
+    return redirect('dashboard')
 
 @login_required
 def update_comment(request, comment_id):
@@ -127,17 +147,14 @@ def update_comment(request, comment_id):
             comment = form.save(commit=False)
             comment.save()
             return redirect('dashboard')
-    else:
-        form = CommentForm(instance=comment)
-    return render(request, 'update_comment.html', {'form': form, 'comment': comment})
+    return redirect('dashboard')
 
 @login_required
 def delete_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, user=request.user)
     if request.method == 'POST':
         comment.delete()
-        return redirect('dashboard')
-    return render(request, 'delete_comment.html', {'comment': comment})
+    return redirect('dashboard')
 
 @login_required
 def add_issue(request):
@@ -148,9 +165,7 @@ def add_issue(request):
             issue.user = request.user
             issue.save()
             return redirect('dashboard')
-    else:
-        form = IssueForm()
-    return render(request, 'add_issue.html', {'form': form})
+    return redirect('dashboard')
 
 @login_required
 def update_issue(request, issue_id):
@@ -161,17 +176,14 @@ def update_issue(request, issue_id):
             issue = form.save(commit=False)
             issue.save()
             return redirect('dashboard')
-    else:
-        form = IssueForm(instance=issue)
-    return render(request, 'update_issue.html', {'form': form, 'issue': issue})
+    return redirect('dashboard')
 
 @login_required
 def delete_issue(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, user=request.user)
     if request.method == 'POST':
         issue.delete()
-        return redirect('dashboard')
-    return render(request, 'delete_issue.html', {'issue': issue})
+    return redirect('dashboard')
 
 @login_required
 def add_label(request):
@@ -180,29 +192,24 @@ def add_label(request):
         if form.is_valid():
             form.save()
             return redirect('dashboard')
-    else:
-        form = LabelForm()
-    return render(request, 'add_label.html', {'form': form})
+    return redirect('dashboard')
 
 @login_required
 def update_label(request, label_id):
-    label = get_object_or_404(Label, id=label_id)  
+    label = get_object_or_404(Label, id=label_id)
     if request.method == 'POST':
         form = LabelForm(request.POST, instance=label)
         if form.is_valid():
             form.save()
             return redirect('dashboard')
-    else:
-        form = LabelForm(instance=label)
-    return render(request, 'update_label.html', {'form': form, 'label': label})
+    return redirect('dashboard')
 
 @login_required
 def delete_label(request, label_id):
-    label = get_object_or_404(Label, id=label_id)  
+    label = get_object_or_404(Label, id=label_id)
     if request.method == 'POST':
         label.delete()
-        return redirect('dashboard')
-    return render(request, 'delete_label.html', {'label': label})
+    return redirect('dashboard')
 
 @login_required
 def close_issue(request, issue_id):
@@ -213,10 +220,9 @@ def close_issue(request, issue_id):
         Notification.objects.create(
             user=request.user,
             task=issue.task,
-            message=f"Проблема '{issue.text[:50]}...' закрыта"
+            message=f"Issue '{issue.text[:50]}...' closed"
         )
-        return redirect('dashboard')
-    return render(request, 'close_issue.html', {'issue': issue})
+    return redirect('dashboard')
 
 @login_required
 def reopen_issue(request, issue_id):
@@ -227,12 +233,10 @@ def reopen_issue(request, issue_id):
         Notification.objects.create(
             user=request.user,
             task=issue.task,
-            message=f"Проблема '{issue.text[:50]}...' повторно открыта"
+            message=f"Issue '{issue.text[:50]}...' reopened"
         )
-        return redirect('dashboard')
-    return render(request, 'reopen_issue.html', {'issue': issue})
+    return redirect('dashboard')
 
-# Deadline Views: CRUD + Закрытие/Открытие
 @login_required
 def create_deadline(request):
     if request.method == 'POST':
@@ -244,12 +248,10 @@ def create_deadline(request):
             Notification.objects.create(
                 user=request.user,
                 task=deadline.task,
-                message=f"Создан новый дедлайн: {deadline.title}"
+                message=f"New deadline created: {deadline.title}"
             )
             return redirect('dashboard')
-    else:
-        form = DeadlineForm()
-    return render(request, 'create_deadline.html', {'form': form})
+    return redirect('dashboard')
 
 @login_required
 def update_deadline(request, deadline_id):
@@ -261,12 +263,10 @@ def update_deadline(request, deadline_id):
             Notification.objects.create(
                 user=request.user,
                 task=deadline.task,
-                message=f"Дедлайн '{deadline.title}' обновлен"
+                message=f"Deadline '{deadline.title}' updated"
             )
             return redirect('dashboard')
-    else:
-        form = DeadlineForm(instance=deadline)
-    return render(request, 'update_deadline.html', {'form': form, 'deadline': deadline})
+    return redirect('dashboard')
 
 @login_required
 def delete_deadline(request, deadline_id):
@@ -276,10 +276,9 @@ def delete_deadline(request, deadline_id):
         Notification.objects.create(
             user=request.user,
             task=deadline.task,
-            message=f"Дедлайн '{deadline.title}' удален"
+            message=f"Deadline '{deadline.title}' deleted"
         )
-        return redirect('dashboard')
-    return render(request, 'delete_deadline.html', {'deadline': deadline})
+    return redirect('dashboard')
 
 @login_required
 def close_deadline(request, deadline_id):
@@ -290,10 +289,9 @@ def close_deadline(request, deadline_id):
         Notification.objects.create(
             user=request.user,
             task=deadline.task,
-            message=f"Дедлайн '{deadline.title}' завершен"
+            message=f"Deadline '{deadline.title}' completed"
         )
-        return redirect('dashboard')
-    return render(request, 'close_deadline.html', {'deadline': deadline})
+    return redirect('dashboard')
 
 @login_required
 def reopen_deadline(request, deadline_id):
@@ -304,7 +302,6 @@ def reopen_deadline(request, deadline_id):
         Notification.objects.create(
             user=request.user,
             task=deadline.task,
-            message=f"Дедлайн '{deadline.title}' повторно открыт"
+            message=f"Deadline '{deadline.title}' reopened"
         )
-        return redirect('dashboard')
-    return render(request, 'reopen_deadline.html', {'deadline': deadline})
+    return redirect('dashboard')
