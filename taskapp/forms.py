@@ -18,7 +18,8 @@ class TaskForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['access'].queryset = CustomUser.objects.all()  
+        self.fields['access'].queryset = CustomUser.objects.all()
+        self.fields['access'].required = False
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -33,8 +34,9 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['members'].queryset = CustomUser.objects.all() 
-        self.fields['tasks'].queryset = Task.objects.all()  
+        self.fields['members'].queryset = CustomUser.objects.all()
+        self.fields['tasks'].queryset = Task.objects.all()
+        self.fields['tasks'].required = False
 
 class CommentForm(forms.ModelForm):
     class Meta:
@@ -48,7 +50,7 @@ class CommentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['task'].queryset = Task.objects.all() 
+        self.fields['task'].queryset = Task.objects.all()
 
 class IssueForm(forms.ModelForm):
     class Meta:
@@ -62,7 +64,7 @@ class IssueForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['task'].queryset = Task.objects.all() 
+        self.fields['task'].queryset = Task.objects.all()
 
 class LabelForm(forms.ModelForm):
     class Meta:
@@ -91,13 +93,13 @@ class DeadlineForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['task'].queryset = Task.objects.all() 
+        self.fields['task'].queryset = Task.objects.all()
         self.fields['task'].required = False
 
 class NotificationForm(forms.ModelForm):
     class Meta:
         model = Notification
-        fields = ['user', 'task', 'message']  
+        fields = ['user', 'task', 'message']
         widgets = {
             'user': forms.Select(attrs={'class': 'form-control'}),
             'task': forms.Select(attrs={'class': 'form-control'}),
@@ -106,5 +108,5 @@ class NotificationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user'].queryset = CustomUser.objects.all() 
-        self.fields['task'].queryset = Task.objects.all()  
+        self.fields['user'].queryset = CustomUser.objects.all()
+        self.fields['task'].queryset = Task.objects.all()

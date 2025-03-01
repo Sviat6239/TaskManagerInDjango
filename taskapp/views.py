@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm, DeadlineForm
 from .models import Task, Comment, Project, Label, Issue, Notification, Deadline
 
@@ -48,7 +49,18 @@ def create_task(request):
             task.user = request.user
             task.save()
             form.save_m2m()
-            return redirect('dashboard')
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': task.id,
+                    'title': task.title,
+                    'description': task.description,
+                    'stage': task.stage,
+                    'deadline': task.deadline.isoformat(),
+                    'completed': task.completed
+                }
+            })
+        return JsonResponse({'success': False, 'error': str(form.errors)})
     return redirect('dashboard')
 
 @login_required
@@ -60,7 +72,18 @@ def update_task(request, task_id):
             task = form.save(commit=False)
             task.save()
             form.save_m2m()
-            return redirect('dashboard')
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': task.id,
+                    'title': task.title,
+                    'description': task.description,
+                    'stage': task.stage,
+                    'deadline': task.deadline.isoformat(),
+                    'completed': task.completed
+                }
+            })
+        return JsonResponse({'success': False, 'error': str(form.errors)})
     return redirect('dashboard')
 
 @login_required
@@ -68,7 +91,8 @@ def delete_task(request, task_id):
     task = get_object_or_404(Task, id=task_id, user=request.user)
     if request.method == 'POST':
         task.delete()
-    return redirect('dashboard')
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 @login_required
 def create_project(request):

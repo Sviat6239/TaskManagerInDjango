@@ -8,17 +8,17 @@
     <h1 class="mb-5 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard</h1>
 
     {% if notifications %}
-    <div class="alert alert-info mb-5 shadow-sm rounded-3 mx-auto" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; max-width: 800px;">
+    <div class="alert alert-info mb-5 shadow-sm rounded-3 mx-auto" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; max-width: 800px;" id="notifications">
         <h4 class="alert-heading text-center">Notifications</h4>
         {% for notification in notifications %}
-        <p class="mb-1 text-center">{{ notification.message }} <small>({{ notification.created_at|date:"d.m.Y H:i" }})</small></p>
+        <p class="mb-1 text-center" data-id="{{ notification.id }}">{{ notification.message }} <small>({{ notification.created_at|date:"d.m.Y H:i" }})</small></p>
         {% endfor %}
     </div>
     {% endif %}
 
     <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
         <button class="btn btn-primary hover-btn px-4 py-2" onclick="toggleSection('tasks-section')">Tasks</button>
-        <button class="btn btn-success hover-btn px-4 py-2" onclick="toggleSection('projects-section')">Projects</button>
+        <button class="btn btn-success hover<f-btn px-4 py-2" onclick="toggleSection('projects-section')">Projects</button>
         <button class="btn btn-warning hover-btn px-4 py-2" onclick="toggleSection('deadlines-section')">Deadlines</button>
         <button class="btn btn-info hover-btn px-4 py-2" onclick="toggleSection('comments-section')">Comments</button>
         <button class="btn btn-danger hover-btn px-4 py-2" onclick="toggleSection('issues-section')">Issues</button>
@@ -31,36 +31,34 @@
             <div class="card task-card">
                 <div class="card-header bg-primary text-white text-center">Create Task</div>
                 <div class="card-body">
-                    <form method="post" action="{% url 'create_task' %}" enctype="multipart/form-data">
+                    <form method="post" id="create-task-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ task_form.as_p }}
                         <button type="submit" class="btn btn-primary w-100 mt-2 hover-btn">Create</button>
                     </form>
                 </div>
             </div>
-            {% for task in tasks %}
-            <div class="card task-card {% if task.completed %}border-success{% else %}border-warning{% endif %}">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-dark">{{ task.title }}</h5>
-                    <p class="card-text text-muted">{{ task.description|truncatewords:10 }}</p>
-                    <p><strong>Stage:</strong> <span class="badge bg-info">{{ task.stage }}</span></p>
-                    <p><strong>Deadline:</strong> {{ task.deadline|date:"d.m.Y H:i" }}</p>
-                    <div class="d-flex justify-content-center gap-2 flex-wrap">
-                        <form method="post" action="{% url 'update_task' task.id %}" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="completed" value="{% if task.completed %}0{% else %}1{% endif %}">
-                            <button type="submit" class="btn btn-sm {% if task.completed %}btn-warning{% else %}btn-success{% endif %} hover-btn">
+            <div id="tasks-list" class="d-flex flex-wrap justify-content-center gap-4">
+                {% for task in tasks %}
+                <div class="card task-card {% if task.completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ task.id }}">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-dark editable" data-field="title">{{ task.title }}</h5>
+                        <p class="card-text text-muted editable" data-field="description">{{ task.description|truncatewords:10 }}</p>
+                        <p><strong>Stage:</strong> <span class="badge bg-info editable" data-field="stage">{{ task.stage }}</span></p>
+                        <p><strong>Deadline:</strong> <span class="editable" data-field="deadline">{{ task.deadline|date:"d.m.Y H:i" }}</span></p>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <button class="btn btn-sm {% if task.completed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ task.id }}">
                                 {% if task.completed %}Reopen{% else %}Complete{% endif %}
                             </button>
-                        </form>
-                        <a href="{% url 'update_task' task.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_task' task.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ task.id }}">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ task.id }}" data-url="{% url 'delete_task' task.id %}">Delete</button>
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <p class="text-muted text-center">No tasks available</p>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No tasks available</p>
-            {% endfor %}
         </div>
     </div>
 
@@ -70,11 +68,13 @@
             <div class="card task-card">
                 <div class="card-header bg-success text-white text-center">Create Project</div>
                 <div class="card-body">
-                    <form method="post" action="{% url 'create_project' %}" enctype="multipart/form-data" id="project-form">
+                    <form method="post" id="create-project-form" enctype="multipart/form-data">
                         {% csrf_token %}
-                        {{ project_form.as_p }}
+                        {{ project_form.name }}
+                        {{ project_form.description }}
+                        {{ project_form.members }}
                         <div id="tasks-container" class="mt-3">
-                            <h6>Tasks</h6>
+                            <h6>Tasks (Optional)</h6>
                             <div id="task-fields"></div>
                             <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addTaskField()">Add Task</button>
                         </div>
@@ -82,22 +82,24 @@
                     </form>
                 </div>
             </div>
-            {% for project in projects %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-dark">{{ project.name }}</h5>
-                    <p class="card-text text-muted">{{ project.description|truncatewords:10 }}</p>
-                    <p><strong>Members:</strong> <span class="badge bg-success">{{ project.members.count }}</span></p>
-                    <p><strong>Tasks:</strong> <span class="badge bg-primary">{{ project.tasks.count }}</span></p>
-                    <div class="d-flex justify-content-center gap-2">
-                        <a href="{% url 'update_project' project.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_project' project.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
+            <div id="projects-list" class="d-flex flex-wrap justify-content-center gap-4">
+                {% for project in projects %}
+                <div class="card task-card" data-id="{{ project.id }}">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-dark editable" data-field="name">{{ project.name }}</h5>
+                        <p class="card-text text-muted editable" data-field="description">{{ project.description|truncatewords:10 }}</p>
+                        <p><strong>Members:</strong> <span class="badge bg-success">{{ project.members.count }}</span></p>
+                        <p><strong>Tasks:</strong> <span class="badge bg-primary">{{ project.tasks.count }}</span></p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ project.id }}">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ project.id }}" data-url="{% url 'delete_project' project.id %}">Delete</button>
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <p class="text-muted text-center">No projects available</p>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No projects available</p>
-            {% endfor %}
         </div>
     </div>
 
@@ -107,33 +109,33 @@
             <div class="card task-card">
                 <div class="card-header bg-warning text-dark text-center">Create Deadline</div>
                 <div class="card-body">
-                    <form method="post" action="{% url 'create_deadline' %}" enctype="multipart/form-data">
+                    <form method="post" id="create-deadline-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ deadline_form.as_p }}
                         <button type="submit" class="btn btn-warning w-100 mt-2 hover-btn">Create</button>
                     </form>
                 </div>
             </div>
-            {% for deadline in deadlines %}
-            <div class="card task-card {% if deadline.is_overdue %}border-danger{% elif deadline.is_completed %}border-success{% else %}border-warning{% endif %}">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-dark">{{ deadline.title }}</h5>
-                    <p class="card-text text-muted">{{ deadline.description|truncatewords:10 }}</p>
-                    <p><strong>Due:</strong> {{ deadline.due_date|date:"d.m.Y H:i" }}</p>
-                    <div class="d-flex justify-content-center gap-2 flex-wrap">
-                        <a href="{% url 'update_deadline' deadline.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_deadline' deadline.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
-                        {% if deadline.is_completed %}
-                        <a href="{% url 'reopen_deadline' deadline.id %}" class="btn btn-sm btn-warning hover-btn">Reopen</a>
-                        {% else %}
-                        <a href="{% url 'close_deadline' deadline.id %}" class="btn btn-sm btn-success hover-btn">Complete</a>
-                        {% endif %}
+            <div id="deadlines-list" class="d-flex flex-wrap justify-content-center gap-4">
+                {% for deadline in deadlines %}
+                <div class="card task-card {% if deadline.is_overdue %}border-danger{% elif deadline.is_completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ deadline.id }}">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-dark editable" data-field="title">{{ deadline.title }}</h5>
+                        <p class="card-text text-muted editable" data-field="description">{{ deadline.description|truncatewords:10 }}</p>
+                        <p><strong>Due:</strong> <span class="editable" data-field="due_date">{{ deadline.due_date|date:"d.m.Y H:i" }}</span></p>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <a href="{% url 'update_deadline' deadline.id %}" class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ deadline.id }}">Edit</a>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ deadline.id }}" data-url="{% url 'delete_deadline' deadline.id %}">Delete</button>
+                            <button class="btn btn-sm {% if deadline.is_completed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ deadline.id }}" data-url="{% if deadline.is_completed %}{% url 'reopen_deadline' deadline.id %}{% else %}{% url 'close_deadline' deadline.id %}{% endif %}">
+                                {% if deadline.is_completed %}Reopen{% else %}Complete{% endif %}
+                            </button>
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <p class="text-muted text-center">No deadlines available</p>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No deadlines available</p>
-            {% endfor %}
         </div>
     </div>
 
@@ -143,27 +145,29 @@
             <div class="card task-card">
                 <div class="card-header bg-info text-white text-center">Add Comment</div>
                 <div class="card-body">
-                    <form method="post" action="{% url 'add_comment' %}" enctype="multipart/form-data">
+                    <form method="post" id="create-comment-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ comment_form.as_p }}
                         <button type="submit" class="btn btn-info w-100 mt-2 hover-btn">Add Comment</button>
                     </form>
                 </div>
             </div>
-            {% for comment in comments %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <p class="text-muted">{{ comment.text|truncatewords:15 }}</p>
-                    <small class="text-info">Task: {{ comment.task.title }}</small>
-                    <div class="d-flex justify-content-center gap-2 mt-2">
-                        <a href="{% url 'update_comment' comment.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
+            <div id="comments-list" class="d-flex flex-wrap justify-content-center gap-4">
+                {% for comment in comments %}
+                <div class="card task-card" data-id="{{ comment.id }}">
+                    <div class="card-body text-center">
+                        <p class="text-muted editable" data-field="text">{{ comment.text|truncatewords:15 }}</p>
+                        <small class="text-info">Task: <span class="editable" data-field="task">{{ comment.task.title }}</span></small>
+                        <div class="d-flex justify-content-center gap-2 mt-2">
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ comment.id }}">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ comment.id }}" data-url="{% url 'delete_comment' comment.id %}">Delete</button>
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <p class="text-muted text-center">No comments available</p>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No comments available</p>
-            {% endfor %}
         </div>
     </div>
 
@@ -173,32 +177,32 @@
             <div class="card task-card">
                 <div class="card-header bg-danger text-white text-center">Add Issue</div>
                 <div class="card-body">
-                    <form method="post" action="{% url 'add_issue' %}" enctype="multipart/form-data">
+                    <form method="post" id="create-issue-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ issue_form.as_p }}
                         <button type="submit" class="btn btn-danger w-100 mt-2 hover-btn">Add Issue</button>
                     </form>
                 </div>
             </div>
-            {% for issue in issues %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <p class="text-muted">{{ issue.text|truncatewords:15 }}</p>
-                    <small class="text-danger">Task: {{ issue.task.title }}</small>
-                    <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
-                        <a href="{% url 'update_issue' issue.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_issue' issue.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
-                        {% if issue.closed %}
-                        <a href="{% url 'reopen_issue' issue.id %}" class="btn btn-sm btn-warning hover-btn">Reopen</a>
-                        {% else %}
-                        <a href="{% url 'close_issue' issue.id %}" class="btn btn-sm btn-success hover-btn">Close</a>
-                        {% endif %}
+            <div id="issues-list" class="d-flex flex-wrap justify-content-center gap-4">
+                {% for issue in issues %}
+                <div class="card task-card" data-id="{{ issue.id }}">
+                    <div class="card-body text-center">
+                        <p class="text-muted editable" data-field="text">{{ issue.text|truncatewords:15 }}</p>
+                        <small class="text-danger">Task: <span class="editable" data-field="task">{{ issue.task.title }}</span></small>
+                        <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ issue.id }}">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ issue.id }}" data-url="{% url 'delete_issue' issue.id %}">Delete</button>
+                            <button class="btn btn-sm {% if issue.closed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ issue.id }}" data-url="{% if issue.closed %}{% url 'reopen_issue' issue.id %}{% else %}{% url 'close_issue' issue.id %}{% endif %}">
+                                {% if issue.closed %}Reopen{% else %}Close{% endif %}
+                            </button>
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <p class="text-muted text-center">No issues available</p>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No issues available</p>
-            {% endfor %}
         </div>
     </div>
 
@@ -208,26 +212,28 @@
             <div class="card task-card">
                 <div class="card-header bg-dark text-white text-center">Add Label</div>
                 <div class="card-body">
-                    <form method="post" action="{% url 'add_label' %}" enctype="multipart/form-data">
+                    <form method="post" id="create-label-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ label_form.as_p }}
                         <button type="submit" class="btn btn-dark w-100 mt-2 hover-btn">Add Label</button>
                     </form>
                 </div>
             </div>
-            {% for label in labels %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <span class="badge d-block mb-2" style="background-color: {{ label.color }}; color: {% if label.color|slice:'1:'|lower in 'ffffff f0f0f0 e0e0e0 d0d0d0 c0c0c0' %}#000000{% else %}#ffffff{% endif %}; padding: 0.5em 1em;">{{ label.name }}</span>
-                    <div class="d-flex justify-content-center gap-2">
-                        <a href="{% url 'update_label' label.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_label' label.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
+            <div id="labels-list" class="d-flex flex-wrap justify-content-center gap-4">
+                {% for label in labels %}
+                <div class="card task-card" data-id="{{ label.id }}">
+                    <div class="card-body text-center">
+                        <span class="badge d-block mb-2 editable" style="background-color: {{ label.color }}; color: {% if label.color|slice:'1:'|lower in 'ffffff f0f0f0 e0e0e0 d0d0d0 c0c0c0' %}#000000{% else %}#ffffff{% endif %}; padding: 0.5em 1em;" data-field="name">{{ label.name }}</span>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ label.id }}">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ label.id }}" data-url="{% url 'delete_label' label.id %}">Delete</button>
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <p class="text-muted text-center">No labels available</p>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No labels available</p>
-            {% endfor %}
         </div>
     </div>
 </div>
@@ -308,6 +314,10 @@
         width: 100%;
         margin-bottom: 5px;
     }
+    .editable:hover {
+        background-color: #f0f0f0;
+        cursor: pointer;
+    }
 </style>
 
 <script>
@@ -351,6 +361,189 @@
         `;
         container.appendChild(taskDiv);
         taskCount++;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('form[id$="-form"]').forEach(form => {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const url = form.action;
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        const list = document.getElementById(`${form.id.split('-')[1]}s-list`);
+                        const card = createCard(data.item, form.id.split('-')[1]);
+                        list.insertAdjacentHTML('afterbegin', card);
+                        form.reset();
+                        document.getElementById('task-fields').innerHTML = ''; 
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+        document.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit-btn')) {
+                const card = e.target.closest('.task-card');
+                const id = card.dataset.id;
+                const type = card.closest('.section').id.split('-')[0];
+                const fields = card.querySelectorAll('.editable');
+                
+                fields.forEach(field => {
+                    const currentValue = field.textContent;
+                    const fieldName = field.dataset.field;
+                    if (fieldName === 'deadline' || fieldName === 'due_date') {
+                        field.innerHTML = `<input type="datetime-local" name="${fieldName}" value="${currentValue.split(' ').reverse().join('T').replace(':', '')}" />`;
+                    } else if (fieldName === 'stage') {
+                        field.innerHTML = `<input type="number" name="${fieldName}" value="${currentValue}" min="0" />`;
+                    } else {
+                        field.innerHTML = `<input type="text" name="${fieldName}" value="${currentValue}" />`;
+                    }
+                });
+
+                e.target.textContent = 'Save';
+                e.target.classList.remove('edit-btn');
+                e.target.classList.add('save-btn');
+            } else if (e.target.classList.contains('save-btn')) {
+                const card = e.target.closest('.task-card');
+                const id = card.dataset.id;
+                const type = card.closest('.section').id.split('-')[0];
+                const formData = new FormData();
+                card.querySelectorAll('input').forEach(input => {
+                    formData.append(input.name, input.value);
+                });
+
+                try {
+                    const response = await fetch(`/dashboard/${type}/${id}/update/`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrfToken() }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        updateCard(card, data.item);
+                        e.target.textContent = 'Edit';
+                        e.target.classList.remove('save-btn');
+                        e.target.classList.add('edit-btn');
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        });
+
+        document.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const card = e.target.closest('.task-card');
+                const id = card.dataset.id;
+                const url = e.target.dataset.url;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrfToken() }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        card.remove();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        });
+
+        document.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('toggle-complete')) {
+                const card = e.target.closest('.task-card');
+                const id = card.dataset.id;
+                const url = e.target.dataset.url || `/dashboard/${card.closest('.section').id.split('-')[0]}/${id}/${e.target.textContent.toLowerCase()}/`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrfToken() }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        updateCard(card, data.item);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        });
+    });
+
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function createCard(item, type) {
+        const template = {
+            task: `
+                <div class="card task-card ${item.completed ? 'border-success' : 'border-warning'}" data-id="${item.id}">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-dark editable" data-field="title">${item.title}</h5>
+                        <p class="card-text text-muted editable" data-field="description">${item.description.slice(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
+                        <p><strong>Stage:</strong> <span class="badge bg-info editable" data-field="stage">${item.stage}</span></p>
+                        <p><strong>Deadline:</strong> <span class="editable" data-field="deadline">${new Date(item.deadline).toLocaleString()}</span></p>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <button class="btn btn-sm ${item.completed ? 'btn-warning' : 'btn-success'} hover-btn toggle-complete" data-id="${item.id}">${item.completed ? 'Reopen' : 'Complete'}</button>
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/task/${item.id}/delete/">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            project: `
+                <div class="card task-card" data-id="${item.id}">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-dark editable" data-field="name">${item.name}</h5>
+                        <p class="card-text text-muted editable" data-field="description">${item.description.slice(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
+                        <p><strong>Members:</strong> <span class="badge bg-success">${item.members_count}</span></p>
+                        <p><strong>Tasks:</strong> <span class="badge bg-primary">${item.tasks_count}</span></p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/project/${item.id}/delete/">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+        };
+        return template[type] || '';
+    }
+
+    function updateCard(card, item) {
+        const type = card.closest('.section').id.split('-')[0];
+        if (type === 'task') {
+            card.classList.toggle('border-success', item.completed);
+            card.classList.toggle('border-warning', !item.completed);
+            card.querySelector('[data-field="title"]').textContent = item.title;
+            card.querySelector('[data-field="description"]').textContent = item.description.slice(0, 50) + (item.description.length > 50 ? '...' : '');
+            card.querySelector('[data-field="stage"]').textContent = item.stage;
+            card.querySelector('[data-field="deadline"]').textContent = new Date(item.deadline).toLocaleString();
+            const toggleBtn = card.querySelector('.toggle-complete');
+            toggleBtn.textContent = item.completed ? 'Reopen' : 'Complete';
+            toggleBtn.classList.toggle('btn-warning', item.completed);
+            toggleBtn.classList.toggle('btn-success', !item.completed);
+            toggleBtn.dataset.url = item.completed ? `/dashboard/task/${item.id}/reopen/` : `/dashboard/task/${item.id}/complete/`;
+        }
     }
 </script>
 {% endblock %}
