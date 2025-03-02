@@ -4,353 +4,667 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1 class="mb-5 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard</h1>
-
-    {% if notifications %}
-    <div class="alert alert-info mb-5 shadow-sm rounded-3 mx-auto" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; max-width: 800px;">
-        <h4 class="alert-heading text-center">Notifications</h4>
-        {% for notification in notifications %}
-        <p class="mb-1 text-center">{{ notification.message }} <small>({{ notification.created_at|date:"d.m.Y H:i" }})</small></p>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
-        <button class="btn btn-primary hover-btn px-4 py-2" onclick="toggleSection('tasks-section')">Tasks</button>
-        <button class="btn btn-success hover-btn px-4 py-2" onclick="toggleSection('projects-section')">Projects</button>
-        <button class="btn btn-warning hover-btn px-4 py-2" onclick="toggleSection('deadlines-section')">Deadlines</button>
-        <button class="btn btn-info hover-btn px-4 py-2" onclick="toggleSection('comments-section')">Comments</button>
-        <button class="btn btn-danger hover-btn px-4 py-2" onclick="toggleSection('issues-section')">Issues</button>
-        <button class="btn btn-dark hover-btn px-4 py-2" onclick="toggleSection('labels-section')">Labels</button>
+<div class="container-fluid mt-5 d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar card d-flex flex-column gap-3" style="background: #2c3e50; border-radius: 15px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); height: fit-content; position: sticky; top: 20px; width: 100%; max-width: 250px; min-width: 150px;">
+        <div class="card-header bg-dark text-white text-center" style="border-radius: 15px 15px 0 0;">Menu</div>
+        <div class="card-body d-flex flex-column gap-2 p-3">
+            <button class="btn btn-primary w-100 toggle-section" data-section="tasks-section">Tasks</button>
+            <button class="btn btn-success w-100 toggle-section" data-section="projects-section">Projects</button>
+            <button class="btn btn-warning w-100 toggle-section" data-section="deadlines-section">Deadlines</button>
+            <button class="btn btn-info w-100 toggle-section" data-section="comments-section">Comments</button>
+            <button class="btn btn-danger w-100 toggle-section" data-section="issues-section">Issues</button>
+            <button class="btn btn-dark w-100 toggle-section" data-section="labels-section">Labels</button>
+        </div>
     </div>
 
-    <div id="tasks-section" class="section mb-5" style="display: none;">
-        <h3 class="mb-4 text-primary text-center">Tasks</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
-                <div class="card-header bg-primary text-white text-center">Create Task</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'create_task' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ task_form.as_p }}
-                        <button type="submit" class="btn btn-primary w-100 mt-2 hover-btn">Create</button>
-                    </form>
-                </div>
-            </div>
-            {% for task in tasks %}
-            <div class="card task-card {% if task.completed %}border-success{% else %}border-warning{% endif %}">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-dark">{{ task.title }}</h5>
-                    <p class="card-text text-muted">{{ task.description|truncatewords:10 }}</p>
-                    <p><strong>Stage:</strong> <span class="badge bg-info">{{ task.stage }}</span></p>
-                    <p><strong>Deadline:</strong> {{ task.deadline|date:"d.m.Y H:i" }}</p>
-                    <div class="d-flex justify-content-center gap-2 flex-wrap">
-                        <form method="post" action="{% url 'update_task' task.id %}" class="d-inline">
+    <!-- Main Content Area -->
+    <div class="main-content flex-grow-1" style="margin-left: 70px;">
+        <h1 class="mb-4 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard</h1>
+        
+        {% if notifications %}
+        <div class="alert alert-info mb-4 shadow-sm rounded-3 mx-auto" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; max-width: 800px;" id="notifications">
+            <h4 class="alert-heading text-center">Notifications</h4>
+            {% for notification in notifications %}
+            <p class="mb-1 text-center">{{ notification.message }} <small>({{ notification.created_at|date:"d.m.Y H:i" }})</small></p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Tasks Section -->
+        <div id="tasks-section" class="section mb-5" style="display: none;">
+            <h3 class="mb-3 text-primary text-center">Tasks</h3>
+            <div class="d-flex justify-content-center gap-4">
+                <div class="card task-card" style="width: 280px;">
+                    <div class="card-header bg-primary text-white text-center">Create Task</div>
+                    <div class="card-body" style="padding: 15px;">
+                        <form method="post" id="create-task-form" enctype="multipart/form-data">
                             {% csrf_token %}
-                            <input type="hidden" name="completed" value="{% if task.completed %}0{% else %}1{% endif %}">
-                            <button type="submit" class="btn btn-sm {% if task.completed %}btn-warning{% else %}btn-success{% endif %} hover-btn">
-                                {% if task.completed %}Reopen{% else %}Complete{% endif %}
-                            </button>
+                            {{ task_form.as_p }}
+                            <button type="submit" class="btn btn-primary w-100 mt-2 crud-action">Create</button>
                         </form>
-                        <a href="{% url 'update_task' task.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_task' task.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
                     </div>
                 </div>
-            </div>
-            {% empty %}
-            <p class="text-muted text-center">No tasks available</p>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div id="projects-section" class="section mb-5" style="display: none;">
-        <h3 class="mb-4 text-success text-center">Projects</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
-                <div class="card-header bg-success text-white text-center">Create Project</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'create_project' %}" enctype="multipart/form-data" id="project-form">
-                        {% csrf_token %}
-                        {{ project_form.as_p }}
-                        <div id="tasks-container" class="mt-3">
-                            <h6>Tasks</h6>
-                            <div id="task-fields"></div>
-                            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addTaskField()">Add Task</button>
+                <div class="card task-card" style="width: 320px;">
+                    <div class="card-header bg-primary text-white text-center">Tasks List</div>
+                    <div class="card-body task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;" data-type="task">
+                        {% for task in tasks %}
+                        <div class="task-item {% if task.completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ task.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                            <h5 class="card-title text-dark" style="font-size: 1.1rem; margin-bottom: 5px;">{{ task.title }}</h5>
+                            <p class="card-text text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">{{ task.description|truncatewords:10 }}</p>
+                            <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Stage:</strong> <span class="badge bg-info" style="font-size: 0.85rem;">{{ task.stage }}</span></p>
+                            <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Deadline:</strong> {{ task.deadline|date:"d.m.Y H:i" }}</p>
+                            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                <form method="post" class="crud-action" data-action="{% url 'complete_task' task.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if task.completed %}btn-warning{% else %}btn-success{% endif %}" style="font-size: 0.75rem; padding: 4px 8px;">
+                                        {% if task.completed %}Reopen{% else %}Complete{% endif %}
+                                    </button>
+                                </form>
+                                <a href="{% url 'update_task' task.id %}" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                                <form method="post" class="crud-action" data-action="{% url 'delete_task' task.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this task?')">Delete</button>
+                                </form>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-success w-100 mt-3 hover-btn">Create Project</button>
-                    </form>
-                </div>
-            </div>
-            {% for project in projects %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-dark">{{ project.name }}</h5>
-                    <p class="card-text text-muted">{{ project.description|truncatewords:10 }}</p>
-                    <p><strong>Members:</strong> <span class="badge bg-success">{{ project.members.count }}</span></p>
-                    <p><strong>Tasks:</strong> <span class="badge bg-primary">{{ project.tasks.count }}</span></p>
-                    <div class="d-flex justify-content-center gap-2">
-                        <a href="{% url 'update_project' project.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_project' project.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
+                        {% empty %}
+                        <p class="text-muted text-center" style="font-size: 0.9rem;">No tasks available</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No projects available</p>
-            {% endfor %}
         </div>
-    </div>
 
-    <div id="deadlines-section" class="section mb-5" style="display: none;">
-        <h3 class="mb-4 text-warning text-center">Deadlines</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
-                <div class="card-header bg-warning text-dark text-center">Create Deadline</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'create_deadline' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ deadline_form.as_p }}
-                        <button type="submit" class="btn btn-warning w-100 mt-2 hover-btn">Create</button>
-                    </form>
+        <!-- Projects Section -->
+        <div id="projects-section" class="section mb-5" style="display: none;">
+            <h3 class="mb-3 text-success text-center">Projects</h3>
+            <div class="d-flex justify-content-center gap-4">
+                <div class="card task-card" style="width: 280px;">
+                    <div class="card-header bg-success text-white text-center">Create Project</div>
+                    <div class="card-body" style="padding: 15px;">
+                        <form method="post" id="create-project-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ project_form.as_p }}
+                            <div>
+                                <h6 style="font-size: 0.9rem;">Tasks (Optional)</h6>
+                                {% for i in '123' %}
+                                <div style="border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; border-radius: 5px; background: #f9f9f9;">
+                                    <input type="text" name="task_title_{{ i }}" placeholder="Task Title" class="form-control mb-2">
+                                    <textarea name="task_description_{{ i }}" placeholder="Task Description" rows="2" class="form-control mb-2"></textarea>
+                                    <input type="datetime-local" name="task_deadline_{{ i }}" class="form-control mb-2">
+                                    <input type="number" name="task_stage_{{ i }}" placeholder="Stage" min="0" value="0" class="form-control mb-2">
+                                    <input type="checkbox" name="task_completed_{{ i }}" id="completed_{{ i }}" class="form-check-input mb-2">
+                                    <label for="completed_{{ i }}" class="form-check-label">Completed</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 mt-2 crud-action">Create Project</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-            {% for deadline in deadlines %}
-            <div class="card task-card {% if deadline.is_overdue %}border-danger{% elif deadline.is_completed %}border-success{% else %}border-warning{% endif %}">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-dark">{{ deadline.title }}</h5>
-                    <p class="card-text text-muted">{{ deadline.description|truncatewords:10 }}</p>
-                    <p><strong>Due:</strong> {{ deadline.due_date|date:"d.m.Y H:i" }}</p>
-                    <div class="d-flex justify-content-center gap-2 flex-wrap">
-                        <a href="{% url 'update_deadline' deadline.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_deadline' deadline.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
-                        {% if deadline.is_completed %}
-                        <a href="{% url 'reopen_deadline' deadline.id %}" class="btn btn-sm btn-warning hover-btn">Reopen</a>
-                        {% else %}
-                        <a href="{% url 'close_deadline' deadline.id %}" class="btn btn-sm btn-success hover-btn">Complete</a>
-                        {% endif %}
+                <div class="card task-card" style="width: 320px;">
+                    <div class="card-header bg-success text-white text-center">Projects List</div>
+                    <div class="card-body project-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;" data-type="project">
+                        {% for project in projects %}
+                        <div class="task-item" data-id="{{ project.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                            <h5 class="card-title text-dark" style="font-size: 1.1rem; margin-bottom: 5px;">{{ project.name }}</h5>
+                            <p class="card-text text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">{{ project.description|truncatewords:10 }}</p>
+                            <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Members:</strong> <span class="badge bg-success" style="font-size: 0.85rem;">{{ project.members.count }}</span></p>
+                            <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Tasks:</strong> <span class="badge bg-primary" style="font-size: 0.85rem;">{{ project.tasks.count }}</span></p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{% url 'update_project' project.id %}" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                                <form method="post" class="crud-action" data-action="{% url 'delete_project' project.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this project?')">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center" style="font-size: 0.9rem;">No projects available</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No deadlines available</p>
-            {% endfor %}
         </div>
-    </div>
 
-    <div id="comments-section" class="section mb-5" style="display: none;">
-        <h3 class="mb-4 text-info text-center">Comments</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
-                <div class="card-header bg-info text-white text-center">Add Comment</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'add_comment' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ comment_form.as_p }}
-                        <button type="submit" class="btn btn-info w-100 mt-2 hover-btn">Add Comment</button>
-                    </form>
+        <!-- Deadlines Section -->
+        <div id="deadlines-section" class="section mb-5" style="display: none;">
+            <h3 class="mb-3 text-warning text-center">Deadlines</h3>
+            <div class="d-flex justify-content-center gap-4">
+                <div class="card task-card" style="width: 280px;">
+                    <div class="card-header bg-warning text-dark text-center">Create Deadline</div>
+                    <div class="card-body" style="padding: 15px;">
+                        <form method="post" id="create-deadline-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ deadline_form.as_p }}
+                            <button type="submit" class="btn btn-warning w-100 mt-2 crud-action">Create</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-            {% for comment in comments %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <p class="text-muted">{{ comment.text|truncatewords:15 }}</p>
-                    <small class="text-info">Task: {{ comment.task.title }}</small>
-                    <div class="d-flex justify-content-center gap-2 mt-2">
-                        <a href="{% url 'update_comment' comment.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
+                <div class="card task-card" style="width: 320px;">
+                    <div class="card-header bg-warning text-dark text-center">Deadlines List</div>
+                    <div class="card-body deadline-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;" data-type="deadline">
+                        {% for deadline in deadlines %}
+                        <div class="task-item {% if deadline.is_overdue %}border-danger{% elif deadline.is_completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ deadline.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                            <h5 class="card-title text-dark" style="font-size: 1.1rem; margin-bottom: 5px;">{{ deadline.title }}</h5>
+                            <p class="card-text text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">{{ deadline.description|truncatewords:10 }}</p>
+                            <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Due:</strong> {{ deadline.due_date|date:"d.m.Y H:i" }}</p>
+                            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                <form method="post" class="crud-action" data-action="{% url 'close_deadline' deadline.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if deadline.is_completed %}btn-warning{% else %}btn-success{% endif %}" style="font-size: 0.75rem; padding: 4px 8px;">
+                                        {% if deadline.is_completed %}Reopen{% else %}Complete{% endif %}
+                                    </button>
+                                </form>
+                                <a href="{% url 'update_deadline' deadline.id %}" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                                <form method="post" class="crud-action" data-action="{% url 'delete_deadline' deadline.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this deadline?')">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center" style="font-size: 0.9rem;">No deadlines available</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No comments available</p>
-            {% endfor %}
         </div>
-    </div>
 
-    <div id="issues-section" class="section mb-5" style="display: none;">
-        <h3 class="mb-4 text-danger text-center">Issues</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
-                <div class="card-header bg-danger text-white text-center">Add Issue</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'add_issue' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ issue_form.as_p }}
-                        <button type="submit" class="btn btn-danger w-100 mt-2 hover-btn">Add Issue</button>
-                    </form>
+        <!-- Comments Section -->
+        <div id="comments-section" class="section mb-5" style="display: none;">
+            <h3 class="mb-3 text-info text-center">Comments</h3>
+            <div class="d-flex justify-content-center gap-4">
+                <div class="card task-card" style="width: 280px;">
+                    <div class="card-header bg-info text-white text-center">Add Comment</div>
+                    <div class="card-body" style="padding: 15px;">
+                        <form method="post" id="create-comment-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ comment_form.as_p }}
+                            <button type="submit" class="btn btn-info w-100 mt-2 crud-action">Add Comment</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-            {% for issue in issues %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <p class="text-muted">{{ issue.text|truncatewords:15 }}</p>
-                    <small class="text-danger">Task: {{ issue.task.title }}</small>
-                    <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
-                        <a href="{% url 'update_issue' issue.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_issue' issue.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
-                        {% if issue.closed %}
-                        <a href="{% url 'reopen_issue' issue.id %}" class="btn btn-sm btn-warning hover-btn">Reopen</a>
-                        {% else %}
-                        <a href="{% url 'close_issue' issue.id %}" class="btn btn-sm btn-success hover-btn">Close</a>
-                        {% endif %}
+                <div class="card task-card" style="width: 320px;">
+                    <div class="card-header bg-info text-white text-center">Comments List</div>
+                    <div class="card-body comment-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;" data-type="comment">
+                        {% for comment in comments %}
+                        <div class="task-item" data-id="{{ comment.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                            <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">{{ comment.text|truncatewords:15 }}</p>
+                            <small class="text-info" style="font-size: 0.8rem;">Task: {{ comment.task.title }}</small>
+                            <div class="d-flex justify-content-center gap-2 mt-2">
+                                <a href="{% url 'update_comment' comment.id %}" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                                <form method="post" class="crud-action" data-action="{% url 'delete_comment' comment.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center" style="font-size: 0.9rem;">No comments available</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No issues available</p>
-            {% endfor %}
         </div>
-    </div>
 
-    <div id="labels-section" class="section mb-5" style="display: none;">
-        <h3 class="mb-4 text-dark text-center">Labels</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
-                <div class="card-header bg-dark text-white text-center">Add Label</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'add_label' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ label_form.as_p }}
-                        <button type="submit" class="btn btn-dark w-100 mt-2 hover-btn">Add Label</button>
-                    </form>
+        <!-- Issues Section -->
+        <div id="issues-section" class="section mb-5" style="display: none;">
+            <h3 class="mb-3 text-danger text-center">Issues</h3>
+            <div class="d-flex justify-content-center gap-4">
+                <div class="card task-card" style="width: 280px;">
+                    <div class="card-header bg-danger text-white text-center">Add Issue</div>
+                    <div class="card-body" style="padding: 15px;">
+                        <form method="post" id="create-issue-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ issue_form.as_p }}
+                            <button type="submit" class="btn btn-danger w-100 mt-2 crud-action">Add Issue</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-            {% for label in labels %}
-            <div class="card task-card">
-                <div class="card-body text-center">
-                    <span class="badge d-block mb-2" style="background-color: {{ label.color }}; color: {% if label.color|slice:'1:'|lower in 'ffffff f0f0f0 e0e0e0 d0d0d0 c0c0c0' %}#000000{% else %}#ffffff{% endif %}; padding: 0.5em 1em;">{{ label.name }}</span>
-                    <div class="d-flex justify-content-center gap-2">
-                        <a href="{% url 'update_label' label.id %}" class="btn btn-sm btn-primary hover-btn">Edit</a>
-                        <a href="{% url 'delete_label' label.id %}" class="btn btn-sm btn-danger hover-btn">Delete</a>
+                <div class="card task-card" style="width: 320px;">
+                    <div class="card-header bg-danger text-white text-center">Issues List</div>
+                    <div class="card-body issue-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;" data-type="issue">
+                        {% for issue in issues %}
+                        <div class="task-item" data-id="{{ issue.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                            <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">{{ issue.text|truncatewords:15 }}</p>
+                            <small class="text-danger" style="font-size: 0.8rem;">Task: {{ issue.task.title }}</small>
+                            <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
+                                <form method="post" class="crud-action" data-action="{% url 'close_issue' issue.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if issue.closed %}btn-warning{% else %}btn-success{% endif %}" style="font-size: 0.75rem; padding: 4px 8px;">
+                                        {% if issue.closed %}Reopen{% else %}Close{% endif %}
+                                    </button>
+                                </form>
+                                <a href="{% url 'update_issue' issue.id %}" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                                <form method="post" class="crud-action" data-action="{% url 'delete_issue' issue.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this issue?')">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center" style="font-size: 0.9rem;">No issues available</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted text-center">No labels available</p>
-            {% endfor %}
+        </div>
+
+        <!-- Labels Section -->
+        <div id="labels-section" class="section mb-5" style="display: none;">
+            <h3 class="mb-3 text-dark text-center">Labels</h3>
+            <div class="d-flex justify-content-center gap-4">
+                <div class="card task-card" style="width: 280px;">
+                    <div class="card-header bg-dark text-white text-center">Add Label</div>
+                    <div class="card-body" style="padding: 15px;">
+                        <form method="post" id="create-label-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ label_form.as_p }}
+                            <button type="submit" class="btn btn-dark w-100 mt-2 crud-action">Add Label</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card task-card" style="width: 320px;">
+                    <div class="card-header bg-dark text-white text-center">Labels List</div>
+                    <div class="card-body label-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;" data-type="label">
+                        {% for label in labels %}
+                        <div class="task-item" data-id="{{ label.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                            <span class="badge d-block mb-2" style="background-color: {{ label.color }}; color: {% if label.color|slice:'1:'|lower in 'ffffff f0f0f0 e0e0e0 d0d0d0 c0c0c0' %}#000000{% else %}#ffffff{% endif %}; padding: 0.4em 0.8em; font-size: 0.85rem;">{{ label.name }}</span>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{% url 'update_label' label.id %}" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                                <form method="post" class="crud-action" data-action="{% url 'delete_label' label.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this label?')">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center" style="font-size: 0.9rem;">No labels available</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <style>
     body {
         background: #f5f7fa;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .container {
-        max-width: 1200px;
-    }
-    .task-card {
-        width: 320px;
-        background: white;
+
+    .sidebar.card {
+        background: #2c3e50;
         border-radius: 15px;
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+        width: 100%;
+        max-width: 250px;
+        min-width: 150px;
+        transition: max-width 0.3s ease; /* Плавное изменение ширины */
+    }
+
+    .main-content {
+        padding: 20px;
+        padding-left: 20px; /* Учитываем адаптивный сайдбар */
+    }
+
+    .task-card {
+        width: 280px; /* Уменьшена ширина для компактности */
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Уменьшена тень для компактности */
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
+
     .task-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Уменьшена тень при наведении */
     }
+
     .card-header {
         font-weight: 600;
         padding: 12px;
         border-bottom: 2px solid rgba(255, 255, 255, 0.2);
         border-radius: 15px 15px 0 0;
     }
+
     .card-body {
-        padding: 20px;
+        padding: 15px; /* Уменьшен для компактности */
     }
+
     .card-title {
-        font-size: 1.25rem;
-        margin-bottom: 10px;
+        font-size: 1.1rem; /* Уменьшен для компактности */
+        margin-bottom: 5px;
     }
+
     .card-text {
-        font-size: 0.95rem;
-        margin-bottom: 15px;
+        font-size: 0.85rem; /* Уменьшен для компактности */
+        margin-bottom: 5px;
     }
+
     .badge {
-        font-size: 0.9em;
-        padding: 0.4em 0.8em;
-        border-radius: 10px;
+        font-size: 0.85rem; /* Уменьшен для компактности */
+        padding: 0.3em 0.6em; /* Уменьшен для компактности */
+        border-radius: 8px; /* Немного уменьшен радиус */
     }
-    .hover-btn {
+
+    .btn {
         transition: background-color 0.3s ease, transform 0.2s ease;
-        padding: 6px 12px;
+        padding: 4px 8px; /* Уменьшен для компактности */
         border-radius: 8px;
+        font-size: 0.75rem; /* Уменьшен для компактности */
     }
-    .hover-btn:hover {
+
+    .btn:hover {
         transform: scale(1.05);
     }
+
     h3 {
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-size: 1.5rem;
+        font-size: 1.3rem; /* Уменьшен для компактности */
     }
+
     .section {
         transition: opacity 0.3s ease, transform 0.3s ease;
         opacity: 0;
         transform: translateY(20px);
+        display: none;
     }
-    .section:not(.hidden) {
+
+    .section.active {
         opacity: 1;
         transform: translateY(0);
+        display: block;
     }
+
+    .task-item {
+        border: 1px solid;
+        padding: 8px; /* Уменьшен для компактности */
+        margin-bottom: 8px; /* Уменьшен для компактности */
+        border-radius: 5px;
+        background: white;
+    }
+
     .task-field {
         border: 1px solid #ddd;
-        padding: 10px;
-        margin-bottom: 10px;
+        padding: 8px; /* Уменьшен для компактности */
+        margin-bottom: 8px; /* Уменьшен для компактности */
         border-radius: 5px;
         background: #f9f9f9;
     }
+
     .task-field input, .task-field textarea, .task-field select {
         width: 100%;
         margin-bottom: 5px;
+        font-size: 0.85rem; /* Уменьшен для компактности */
+    }
+
+    /* Адаптивные стили для сайдбара и контента */
+    @media (min-width: 1200px) {
+        .sidebar.card {
+            max-width: 250px;
+        }
+    }
+
+    @media (min-width: 992px) and (max-width: 1199px) {
+        .sidebar.card {
+            max-width: 200px;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .sidebar.card {
+            max-width: 180px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .sidebar.card {
+            width: 100%;
+            max-width: 100%;
+            position: relative;
+            top: 0;
+            margin-bottom: 20px;
+            border-radius: 15px;
+        }
+        .main-content {
+            padding-left: 0;
+        }
+        .container-fluid {
+            flex-direction: column;
+        }
     }
 </style>
 
 <script>
-    function toggleSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        const allSections = document.querySelectorAll('.section');
-        
-        allSections.forEach(sec => {
-            if (sec.id !== sectionId) {
-                sec.style.display = 'none';
-                sec.classList.add('hidden');
-            }
+    // Динамическое отображение секций при нажатии на кнопки
+    document.addEventListener('DOMContentLoaded', () => {
+        const buttons = document.querySelectorAll('.toggle-section');
+        buttons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sectionId = button.getAttribute('data-section');
+                const section = document.getElementById(sectionId);
+                const allSections = document.querySelectorAll('.section');
+
+                allSections.forEach(sec => {
+                    sec.classList.remove('active');
+                    sec.style.display = 'none';
+                });
+
+                section.classList.add('active');
+                section.style.display = 'block';
+            });
         });
 
-        if (section.style.display === 'none' || section.classList.contains('hidden')) {
-            section.style.display = 'block';
-            section.classList.remove('hidden');
-        } else {
-            section.style.opacity = 0;
-            section.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                section.style.display = 'none';
-                section.classList.add('hidden');
-            }, 300);
-        }
-    }
+        // Динамическое обновление списка после CRUD-операций
+        document.querySelectorAll('.crud-action').forEach(form => {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const actionUrl = form.getAttribute('data-action') || form.action;
+                const formData = new FormData(form);
 
-    let taskCount = 0;
-    function addTaskField() {
-        const container = document.getElementById('task-fields');
-        const taskDiv = document.createElement('div');
-        taskDiv.className = 'task-field';
-        taskDiv.innerHTML = `
-            <input type="text" name="task_title_${taskCount}" placeholder="Task Title" required>
-            <textarea name="task_description_${taskCount}" placeholder="Task Description" rows="2"></textarea>
-            <input type="datetime-local" name="task_deadline_${taskCount}" required>
-            <input type="number" name="task_stage_${taskCount}" placeholder="Stage" min="0" value="0">
-            <input type="checkbox" name="task_completed_${taskCount}" id="completed_${taskCount}">
-            <label for="completed_${taskCount}">Completed</label>
-            <button type="button" class="btn btn-danger btn-sm mt-2" onclick="this.parentElement.remove()">Remove</button>
-        `;
-        container.appendChild(taskDiv);
-        taskCount++;
-    }
+                try {
+                    const response = await fetch(actionUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': getCsrfToken(),
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const contentType = response.headers.get('Content-Type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        alert('Server returned an unexpected response. Check the console for details.');
+                        return;
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        // Обновляем список соответствующего типа
+                        const type = form.closest('.task-list').getAttribute('data-type');
+                        await updateList(type);
+                        alert(`Successfully ${form.querySelector('button[type="submit"]').textContent.toLowerCase()}!`);
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to perform action'));
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    alert('An error occurred: ' + (error.message || 'Unknown error'));
+                }
+            });
+        });
+
+        // Функция для обновления списка через AJAX
+        async function updateList(type) {
+            const url = `/dashboard/${type}/`; // Предполагаемый эндпоинт для получения списка
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('Content-Type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    alert('Server returned an unexpected response. Check the console for details.');
+                    return;
+                }
+
+                const data = await response.json();
+                const list = document.querySelector(`.task-list[data-type="${type}"]`);
+                if (list) {
+                    list.innerHTML = ''; // Очищаем текущий список
+                    if (data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            list.innerHTML += createItemHTML(item, type);
+                        });
+                    } else {
+                        list.innerHTML = '<p class="text-muted text-center" style="font-size: 0.9rem;">No items available</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating list:', error);
+                alert('An error occurred while updating the list: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        // Функция для создания HTML-элемента на основе данных
+        function createItemHTML(item, type) {
+            const templates = {
+                task: `
+                    <div class="task-item ${item.completed ? 'border-success' : 'border-warning'}" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <h5 class="card-title text-dark" style="font-size: 1.1rem; margin-bottom: 5px;">${item.title || 'Untitled Task'}</h5>
+                        <p class="card-text text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">${(item.description || '').slice(0, 50)}${(item.description || '').length > 50 ? '...' : ''}</p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Stage:</strong> <span class="badge bg-info" style="font-size: 0.85rem;">${item.stage || 0}</span></p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Deadline:</strong> ${item.deadline ? new Date(item.deadline).toLocaleString() : 'No deadline'}</p>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <form method="post" class="crud-action" data-action="/dashboard/task/${item.id}/${item.completed ? 'reopen' : 'complete'}/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm ${item.completed ? 'btn-warning' : 'btn-success'}" style="font-size: 0.75rem; padding: 4px 8px;">
+                                    ${item.completed ? 'Reopen' : 'Complete'}
+                                </button>
+                            </form>
+                            <a href="/dashboard/task/${item.id}/update/" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                            <form method="post" class="crud-action" data-action="/dashboard/task/${item.id}/delete/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this task?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                `,
+                project: `
+                    <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <h5 class="card-title text-dark" style="font-size: 1.1rem; margin-bottom: 5px;">${item.name || 'Untitled Project'}</h5>
+                        <p class="card-text text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">${(item.description || '').slice(0, 50)}${(item.description || '').length > 50 ? '...' : ''}</p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Members:</strong> <span class="badge bg-success" style="font-size: 0.85rem;">${item.members_count || item.members?.length || 0}</span></p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Tasks:</strong> <span class="badge bg-primary" style="font-size: 0.85rem;">${item.tasks_count || item.tasks?.length || 0}</span></p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="/dashboard/project/${item.id}/update/" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                            <form method="post" class="crud-action" data-action="/dashboard/project/${item.id}/delete/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this project?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                `,
+                deadline: `
+                    <div class="task-item ${item.is_overdue ? 'border-danger' : item.is_completed ? 'border-success' : 'border-warning'}" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <h5 class="card-title text-dark" style="font-size: 1.1rem; margin-bottom: 5px;">${item.title || 'Untitled Deadline'}</h5>
+                        <p class="card-text text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">${(item.description || '').slice(0, 50)}${(item.description || '').length > 50 ? '...' : ''}</p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Due:</strong> ${item.due_date ? new Date(item.due_date).toLocaleString() : 'No due date'}</p>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <form method="post" class="crud-action" data-action="/dashboard/deadline/${item.id}/${item.is_completed ? 'reopen' : 'close'}/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm ${item.is_completed ? 'btn-warning' : 'btn-success'}" style="font-size: 0.75rem; padding: 4px 8px;">
+                                    ${item.is_completed ? 'Reopen' : 'Complete'}
+                                </button>
+                            </form>
+                            <a href="/dashboard/deadline/${item.id}/update/" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                            <form method="post" class="crud-action" data-action="/dashboard/deadline/${item.id}/delete/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this deadline?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                `,
+                comment: `
+                    <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">${(item.text || 'No text').slice(0, 75)}${(item.text || '').length > 75 ? '...' : ''}</p>
+                        <small class="text-info" style="font-size: 0.8rem;">Task: ${item.task_title || item.task?.title || 'N/A'}</small>
+                        <div class="d-flex justify-content-center gap-2 mt-2">
+                            <a href="/dashboard/comment/${item.id}/update/" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                            <form method="post" class="crud-action" data-action="/dashboard/comment/${item.id}/delete/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                `,
+                issue: `
+                    <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">${(item.text || 'No text').slice(0, 75)}${(item.text || '').length > 75 ? '...' : ''}</p>
+                        <small class="text-danger" style="font-size: 0.8rem;">Task: ${item.task_title || item.task?.title || 'N/A'}</small>
+                        <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
+                            <form method="post" class="crud-action" data-action="/dashboard/issue/${item.id}/${item.closed ? 'reopen' : 'close'}/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm ${item.closed ? 'btn-warning' : 'btn-success'}" style="font-size: 0.75rem; padding: 4px 8px;">
+                                    ${item.closed ? 'Reopen' : 'Close'}
+                                </button>
+                            </form>
+                            <a href="/dashboard/issue/${item.id}/update/" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                            <form method="post" class="crud-action" data-action="/dashboard/issue/${item.id}/delete/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this issue?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                `,
+                label: `
+                    <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <span class="badge d-block mb-2" style="background-color: ${item.color || '#000000'}; color: ${item.color?.toLowerCase() === '#ffffff' || item.color?.toLowerCase() === '#f0f0f0' || item.color?.toLowerCase() === '#e0e0e0' || item.color?.toLowerCase() === '#d0d0d0' || item.color?.toLowerCase() === '#c0c0c0' ? '#000000' : '#ffffff'}; padding: 0.4em 0.8em; font-size: 0.85rem;">${item.name || 'Untitled Label'}</span>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="/dashboard/label/${item.id}/update/" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                            <form method="post" class="crud-action" data-action="/dashboard/label/${item.id}/delete/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 8px;" onclick="return confirm('Are you sure you want to delete this label?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                `
+            };
+            return templates[type] || '';
+        }
+
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+    });
 </script>
 {% endblock %}
