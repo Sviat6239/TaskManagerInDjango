@@ -4,7 +4,22 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container-fluid mt-5 d-flex">
+    <!-- Left Sidebar as a Fixed Card -->
+    <div class="sidebar card d-flex flex-column gap-3" style="background: #2c3e50; border-radius: 15px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); height: fit-content; position: sticky; top: 20px; width: 100%; max-width: 250px; min-width: 150px;">
+        <div class="card-header bg-dark text-white text-center" style="border-radius: 15px 15px 0 0;">Menu</div>
+        <div class="card-body d-flex flex-column gap-2 p-3">
+            <button class="btn btn-primary hover-btn w-100" onclick="toggleSection('tasks-section')">Tasks</button>
+            <button class="btn btn-success hover-btn w-100" onclick="toggleSection('projects-section')">Projects</button>
+            <button class="btn btn-warning hover-btn w-100" onclick="toggleSection('deadlines-section')">Deadlines</button>
+            <button class="btn btn-info hover-btn w-100" onclick="toggleSection('comments-section')">Comments</button>
+            <button class="btn btn-danger hover-btn w-100" onclick="toggleSection('issues-section')">Issues</button>
+            <button class="btn btn-dark hover-btn w-100" onclick="toggleSection('labels-section')">Labels</button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+<div class="main-content ms-5 flex-grow-1" style="margin-left: 200px;">
     <h1 class="mb-5 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard</h1>
 
     {% if notifications %}
@@ -16,21 +31,14 @@
     </div>
     {% endif %}
 
-    <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
-        <button class="btn btn-primary hover-btn px-4 py-2" onclick="toggleSection('tasks-section')">Tasks</button>
-        <button class="btn btn-success hover<f-btn px-4 py-2" onclick="toggleSection('projects-section')">Projects</button>
-        <button class="btn btn-warning hover-btn px-4 py-2" onclick="toggleSection('deadlines-section')">Deadlines</button>
-        <button class="btn btn-info hover-btn px-4 py-2" onclick="toggleSection('comments-section')">Comments</button>
-        <button class="btn btn-danger hover-btn px-4 py-2" onclick="toggleSection('issues-section')">Issues</button>
-        <button class="btn btn-dark hover-btn px-4 py-2" onclick="toggleSection('labels-section')">Labels</button>
-    </div>
-
+    <!-- Tasks Section -->
     <div id="tasks-section" class="section mb-5" style="display: none;">
         <h3 class="mb-4 text-primary text-center">Tasks</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
+        <div class="d-flex justify-content-center gap-4">
+            <!-- Create Task Card -->
+            <div class="card task-card" style="width: 280px;">
                 <div class="card-header bg-primary text-white text-center">Create Task</div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 15px;">
                     <form method="post" id="create-task-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ task_form.as_p }}
@@ -38,77 +46,85 @@
                     </form>
                 </div>
             </div>
-            <div id="tasks-list" class="d-flex flex-wrap justify-content-center gap-4">
-                {% for task in tasks %}
-                <div class="card task-card {% if task.completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ task.id }}">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-dark editable" data-field="title">{{ task.title }}</h5>
-                        <p class="card-text text-muted editable" data-field="description">{{ task.description|truncatewords:10 }}</p>
-                        <p><strong>Stage:</strong> <span class="badge bg-info editable" data-field="stage">{{ task.stage }}</span></p>
-                        <p><strong>Deadline:</strong> <span class="editable" data-field="deadline">{{ task.deadline|date:"d.m.Y H:i" }}</span></p>
+            <!-- Tasks List Card -->
+            <div class="card task-card" style="width: 320px;">
+                <div class="card-header bg-primary text-white text-center">Tasks List</div>
+                <div class="card-body" id="tasks-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
+                    {% for task in tasks %}
+                    <div class="task-item {% if task.completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ task.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <h5 class="card-title text-dark editable" data-field="title" style="font-size: 1.1rem; margin-bottom: 5px;">{{ task.title }}</h5>
+                        <p class="card-text text-muted editable" data-field="description" style="font-size: 0.85rem; margin-bottom: 5px;">{{ task.description|truncatewords:10 }}</p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Stage:</strong> <span class="badge bg-info editable" data-field="stage">{{ task.stage }}</span></p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Deadline:</strong> <span class="editable" data-field="deadline">{{ task.deadline|date:"d.m.Y H:i" }}</span></p>
                         <div class="d-flex justify-content-center gap-2 flex-wrap">
-                            <button class="btn btn-sm {% if task.completed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ task.id }}">
+                            <button class="btn btn-sm {% if task.completed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ task.id }}" style="font-size: 0.75rem; padding: 4px 8px;">
                                 {% if task.completed %}Reopen{% else %}Complete{% endif %}
                             </button>
-                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ task.id }}">Edit</button>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ task.id }}" data-url="{% url 'delete_task' task.id %}">Delete</button>
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ task.id }}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ task.id }}" data-url="{% url 'delete_task' task.id %}" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
                         </div>
                     </div>
+                    {% empty %}
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">No tasks available</p>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <p class="text-muted text-center">No tasks available</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 
+    <!-- Projects Section -->
     <div id="projects-section" class="section mb-5" style="display: none;">
         <h3 class="mb-4 text-success text-center">Projects</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
+        <div class="d-flex justify-content-center gap-4">
+            <!-- Create Project Card -->
+            <div class="card task-card" style="width: 280px;">
                 <div class="card-header bg-success text-white text-center">Create Project</div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 15px;">
                     <form method="post" id="create-project-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ project_form.name }}
                         {{ project_form.description }}
                         {{ project_form.members }}
-                        <div id="tasks-container" class="mt-3">
-                            <h6>Tasks (Optional)</h6>
+                        <div id="tasks-container" class="mt-2">
+                            <h6 style="font-size: 0.9rem;">Tasks (Optional)</h6>
                             <div id="task-fields"></div>
-                            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addTaskField()">Add Task</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addTaskField()" style="font-size: 0.75rem; padding: 4px 8px;">Add Task</button>
                         </div>
-                        <button type="submit" class="btn btn-success w-100 mt-3 hover-btn">Create Project</button>
+                        <button type="submit" class="btn btn-success w-100 mt-2 hover-btn">Create Project</button>
                     </form>
                 </div>
             </div>
-            <div id="projects-list" class="d-flex flex-wrap justify-content-center gap-4">
-                {% for project in projects %}
-                <div class="card task-card" data-id="{{ project.id }}">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-dark editable" data-field="name">{{ project.name }}</h5>
-                        <p class="card-text text-muted editable" data-field="description">{{ project.description|truncatewords:10 }}</p>
-                        <p><strong>Members:</strong> <span class="badge bg-success">{{ project.members.count }}</span></p>
-                        <p><strong>Tasks:</strong> <span class="badge bg-primary">{{ project.tasks.count }}</span></p>
+            <!-- Projects List Card -->
+            <div class="card task-card" style="width: 320px;">
+                <div class="card-header bg-success text-white text-center">Projects List</div>
+                <div class="card-body" id="projects-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
+                    {% for project in projects %}
+                    <div class="task-item" data-id="{{ project.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <h5 class="card-title text-dark editable" data-field="name" style="font-size: 1.1rem; margin-bottom: 5px;">{{ project.name }}</h5>
+                        <p class="card-text text-muted editable" data-field="description" style="font-size: 0.85rem; margin-bottom: 5px;">{{ project.description|truncatewords:10 }}</p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Members:</strong> <span class="badge bg-success">{{ project.members.count }}</span></p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Tasks:</strong> <span class="badge bg-primary">{{ project.tasks.count }}</span></p>
                         <div class="d-flex justify-content-center gap-2">
-                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ project.id }}">Edit</button>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ project.id }}" data-url="{% url 'delete_project' project.id %}">Delete</button>
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ project.id }}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ project.id }}" data-url="{% url 'delete_project' project.id %}" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
                         </div>
                     </div>
+                    {% empty %}
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">No projects available</p>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <p class="text-muted text-center">No projects available</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 
+    <!-- Deadlines Section -->
     <div id="deadlines-section" class="section mb-5" style="display: none;">
         <h3 class="mb-4 text-warning text-center">Deadlines</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
+        <div class="d-flex justify-content-center gap-4">
+            <!-- Create Deadline Card -->
+            <div class="card task-card" style="width: 280px;">
                 <div class="card-header bg-warning text-dark text-center">Create Deadline</div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 15px;">
                     <form method="post" id="create-deadline-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ deadline_form.as_p }}
@@ -116,35 +132,39 @@
                     </form>
                 </div>
             </div>
-            <div id="deadlines-list" class="d-flex flex-wrap justify-content-center gap-4">
-                {% for deadline in deadlines %}
-                <div class="card task-card {% if deadline.is_overdue %}border-danger{% elif deadline.is_completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ deadline.id }}">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-dark editable" data-field="title">{{ deadline.title }}</h5>
-                        <p class="card-text text-muted editable" data-field="description">{{ deadline.description|truncatewords:10 }}</p>
-                        <p><strong>Due:</strong> <span class="editable" data-field="due_date">{{ deadline.due_date|date:"d.m.Y H:i" }}</span></p>
+            <!-- Deadlines List Card -->
+            <div class="card task-card" style="width: 320px;">
+                <div class="card-header bg-warning text-dark text-center">Deadlines List</div>
+                <div class="card-body" id="deadlines-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
+                    {% for deadline in deadlines %}
+                    <div class="task-item {% if deadline.is_overdue %}border-danger{% elif deadline.is_completed %}border-success{% else %}border-warning{% endif %}" data-id="{{ deadline.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <h5 class="card-title text-dark editable" data-field="title" style="font-size: 1.1rem; margin-bottom: 5px;">{{ deadline.title }}</h5>
+                        <p class="card-text text-muted editable" data-field="description" style="font-size: 0.85rem; margin-bottom: 5px;">{{ deadline.description|truncatewords:10 }}</p>
+                        <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Due:</strong> <span class="editable" data-field="due_date">{{ deadline.due_date|date:"d.m.Y H:i" }}</span></p>
                         <div class="d-flex justify-content-center gap-2 flex-wrap">
-                            <a href="{% url 'update_deadline' deadline.id %}" class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ deadline.id }}">Edit</a>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ deadline.id }}" data-url="{% url 'delete_deadline' deadline.id %}">Delete</button>
-                            <button class="btn btn-sm {% if deadline.is_completed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ deadline.id }}" data-url="{% if deadline.is_completed %}{% url 'reopen_deadline' deadline.id %}{% else %}{% url 'close_deadline' deadline.id %}{% endif %}">
+                            <a href="{% url 'update_deadline' deadline.id %}" class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ deadline.id }}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</a>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ deadline.id }}" data-url="{% url 'delete_deadline' deadline.id %}" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
+                            <button class="btn btn-sm {% if deadline.is_completed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ deadline.id }}" data-url="{% if deadline.is_completed %}{% url 'reopen_deadline' deadline.id %}{% else %}{% url 'close_deadline' deadline.id %}{% endif %}" style="font-size: 0.75rem; padding: 4px 8px;">
                                 {% if deadline.is_completed %}Reopen{% else %}Complete{% endif %}
                             </button>
                         </div>
                     </div>
+                    {% empty %}
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">No deadlines available</p>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <p class="text-muted text-center">No deadlines available</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 
+    <!-- Comments Section -->
     <div id="comments-section" class="section mb-5" style="display: none;">
         <h3 class="mb-4 text-info text-center">Comments</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
+        <div class="d-flex justify-content-center gap-4">
+            <!-- Add Comment Card -->
+            <div class="card task-card" style="width: 280px;">
                 <div class="card-header bg-info text-white text-center">Add Comment</div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 15px;">
                     <form method="post" id="create-comment-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ comment_form.as_p }}
@@ -152,31 +172,35 @@
                     </form>
                 </div>
             </div>
-            <div id="comments-list" class="d-flex flex-wrap justify-content-center gap-4">
-                {% for comment in comments %}
-                <div class="card task-card" data-id="{{ comment.id }}">
-                    <div class="card-body text-center">
-                        <p class="text-muted editable" data-field="text">{{ comment.text|truncatewords:15 }}</p>
-                        <small class="text-info">Task: <span class="editable" data-field="task">{{ comment.task.title }}</span></small>
+            <!-- Comments List Card -->
+            <div class="card task-card" style="width: 320px;">
+                <div class="card-header bg-info text-white text-center">Comments List</div>
+                <div class="card-body" id="comments-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
+                    {% for comment in comments %}
+                    <div class="task-item" data-id="{{ comment.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <p class="text-muted editable" data-field="text" style="font-size: 0.85rem; margin-bottom: 5px;">{{ comment.text|truncatewords:15 }}</p>
+                        <small class="text-info" style="font-size: 0.8rem;">Task: <span class="editable" data-field="task">{{ comment.task.title }}</span></small>
                         <div class="d-flex justify-content-center gap-2 mt-2">
-                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ comment.id }}">Edit</button>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ comment.id }}" data-url="{% url 'delete_comment' comment.id %}">Delete</button>
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ comment.id }}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ comment.id }}" data-url="{% url 'delete_comment' comment.id %}" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
                         </div>
                     </div>
+                    {% empty %}
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">No comments available</p>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <p class="text-muted text-center">No comments available</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 
+    <!-- Issues Section -->
     <div id="issues-section" class="section mb-5" style="display: none;">
         <h3 class="mb-4 text-danger text-center">Issues</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
+        <div class="d-flex justify-content-center gap-4">
+            <!-- Add Issue Card -->
+            <div class="card task-card" style="width: 280px;">
                 <div class="card-header bg-danger text-white text-center">Add Issue</div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 15px;">
                     <form method="post" id="create-issue-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ issue_form.as_p }}
@@ -184,34 +208,38 @@
                     </form>
                 </div>
             </div>
-            <div id="issues-list" class="d-flex flex-wrap justify-content-center gap-4">
-                {% for issue in issues %}
-                <div class="card task-card" data-id="{{ issue.id }}">
-                    <div class="card-body text-center">
-                        <p class="text-muted editable" data-field="text">{{ issue.text|truncatewords:15 }}</p>
-                        <small class="text-danger">Task: <span class="editable" data-field="task">{{ issue.task.title }}</span></small>
+            <!-- Issues List Card -->
+            <div class="card task-card" style="width: 320px;">
+                <div class="card-header bg-danger text-white text-center">Issues List</div>
+                <div class="card-body" id="issues-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
+                    {% for issue in issues %}
+                    <div class="task-item" data-id="{{ issue.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <p class="text-muted editable" data-field="text" style="font-size: 0.85rem; margin-bottom: 5px;">{{ issue.text|truncatewords:15 }}</p>
+                        <small class="text-danger" style="font-size: 0.8rem;">Task: <span class="editable" data-field="task">{{ issue.task.title }}</span></small>
                         <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
-                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ issue.id }}">Edit</button>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ issue.id }}" data-url="{% url 'delete_issue' issue.id %}">Delete</button>
-                            <button class="btn btn-sm {% if issue.closed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ issue.id }}" data-url="{% if issue.closed %}{% url 'reopen_issue' issue.id %}{% else %}{% url 'close_issue' issue.id %}{% endif %}">
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ issue.id }}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ issue.id }}" data-url="{% url 'delete_issue' issue.id %}" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
+                            <button class="btn btn-sm {% if issue.closed %}btn-warning{% else %}btn-success{% endif %} hover-btn toggle-complete" data-id="{{ issue.id }}" data-url="{% if issue.closed %}{% url 'reopen_issue' issue.id %}{% else %}{% url 'close_issue' issue.id %}{% endif %}" style="font-size: 0.75rem; padding: 4px 8px;">
                                 {% if issue.closed %}Reopen{% else %}Close{% endif %}
                             </button>
                         </div>
                     </div>
+                    {% empty %}
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">No issues available</p>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <p class="text-muted text-center">No issues available</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 
+    <!-- Labels Section -->
     <div id="labels-section" class="section mb-5" style="display: none;">
         <h3 class="mb-4 text-dark text-center">Labels</h3>
-        <div class="d-flex flex-wrap justify-content-center gap-4">
-            <div class="card task-card">
+        <div class="d-flex justify-content-center gap-4">
+            <!-- Add Label Card -->
+            <div class="card task-card" style="width: 280px;">
                 <div class="card-header bg-dark text-white text-center">Add Label</div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 15px;">
                     <form method="post" id="create-label-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ label_form.as_p }}
@@ -219,23 +247,26 @@
                     </form>
                 </div>
             </div>
-            <div id="labels-list" class="d-flex flex-wrap justify-content-center gap-4">
-                {% for label in labels %}
-                <div class="card task-card" data-id="{{ label.id }}">
-                    <div class="card-body text-center">
-                        <span class="badge d-block mb-2 editable" style="background-color: {{ label.color }}; color: {% if label.color|slice:'1:'|lower in 'ffffff f0f0f0 e0e0e0 d0d0d0 c0c0c0' %}#000000{% else %}#ffffff{% endif %}; padding: 0.5em 1em;" data-field="name">{{ label.name }}</span>
+            <!-- Labels List Card -->
+            <div class="card task-card" style="width: 320px;">
+                <div class="card-header bg-dark text-white text-center">Labels List</div>
+                <div class="card-body" id="labels-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
+                    {% for label in labels %}
+                    <div class="task-item" data-id="{{ label.id }}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                        <span class="badge d-block mb-2 editable" style="background-color: {{ label.color }}; color: {% if label.color|slice:'1:'|lower in 'ffffff f0f0f0 e0e0e0 d0d0d0 c0c0c0' %}#000000{% else %}#ffffff{% endif %}; padding: 0.4em 0.8em; font-size: 0.85rem;" data-field="name">{{ label.name }}</span>
                         <div class="d-flex justify-content-center gap-2">
-                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ label.id }}">Edit</button>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ label.id }}" data-url="{% url 'delete_label' label.id %}">Delete</button>
+                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="{{ label.id }}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="{{ label.id }}" data-url="{% url 'delete_label' label.id %}" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
                         </div>
                     </div>
+                    {% empty %}
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">No labels available</p>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <p class="text-muted text-center">No labels available</p>
-                {% endfor %}
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -244,79 +275,155 @@
         background: #f5f7fa;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .container {
-        max-width: 1200px;
-    }
-    .task-card {
-        width: 320px;
-        background: white;
+
+    .sidebar.card {
+        background: #2c3e50;
         border-radius: 15px;
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+        width: 100%;
+        max-width: 250px;
+        min-width: 150px;
+        transition: max-width 0.3s ease; /* Плавное изменение ширины */
+    }
+
+    .main-content {
+        padding: 20px;
+        padding-left: 20px; /* Учитываем адаптивный сайдбар */
+    }
+
+    .task-card {
+        width: 280px; /* Уменьшена ширина для компактности */
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Уменьшена тень для компактности */
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
+
     .task-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Уменьшена тень при наведении */
     }
+
     .card-header {
         font-weight: 600;
         padding: 12px;
         border-bottom: 2px solid rgba(255, 255, 255, 0.2);
         border-radius: 15px 15px 0 0;
     }
+
     .card-body {
-        padding: 20px;
+        padding: 15px; /* Уменьшен для компактности */
     }
+
     .card-title {
-        font-size: 1.25rem;
-        margin-bottom: 10px;
+        font-size: 1.1rem; /* Уменьшен для компактности */
+        margin-bottom: 5px;
     }
+
     .card-text {
-        font-size: 0.95rem;
-        margin-bottom: 15px;
+        font-size: 0.85rem; /* Уменьшен для компактности */
+        margin-bottom: 5px;
     }
+
     .badge {
-        font-size: 0.9em;
-        padding: 0.4em 0.8em;
-        border-radius: 10px;
+        font-size: 0.85rem; /* Уменьшен для компактности */
+        padding: 0.3em 0.6em; /* Уменьшен для компактности */
+        border-radius: 8px; /* Немного уменьшен радиус */
     }
+
     .hover-btn {
         transition: background-color 0.3s ease, transform 0.2s ease;
-        padding: 6px 12px;
+        padding: 4px 8px; /* Уменьшен для компактности */
         border-radius: 8px;
+        font-size: 0.75rem; /* Уменьшен для компактности */
     }
+
     .hover-btn:hover {
         transform: scale(1.05);
     }
+
     h3 {
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-size: 1.5rem;
+        font-size: 1.3rem; /* Уменьшен для компактности */
     }
+
     .section {
         transition: opacity 0.3s ease, transform 0.3s ease;
         opacity: 0;
         transform: translateY(20px);
     }
+
     .section:not(.hidden) {
         opacity: 1;
         transform: translateY(0);
     }
+
+    .task-item {
+        border: 1px solid;
+        padding: 8px; /* Уменьшен для компактности */
+        margin-bottom: 8px; /* Уменьшен для компактности */
+        border-radius: 5px;
+        background: white;
+    }
+
     .task-field {
         border: 1px solid #ddd;
-        padding: 10px;
-        margin-bottom: 10px;
+        padding: 8px; /* Уменьшен для компактности */
+        margin-bottom: 8px; /* Уменьшен для компактности */
         border-radius: 5px;
         background: #f9f9f9;
     }
+
     .task-field input, .task-field textarea, .task-field select {
         width: 100%;
         margin-bottom: 5px;
+        font-size: 0.85rem; /* Уменьшен для компактности */
     }
+
     .editable:hover {
         background-color: #f0f0f0;
         cursor: pointer;
+    }
+
+    /* Адаптивные стили для сайдбара и контента */
+    @media (min-width: 1200px) {
+        .sidebar.card {
+            max-width: 250px;
+        }
+    }
+
+    @media (min-width: 992px) and (max-width: 1199px) {
+        .sidebar.card {
+            max-width: 200px;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .sidebar.card {
+            max-width: 180px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .sidebar.card {
+            width: 100%;
+            max-width: 100%;
+            position: relative;
+            top: 0;
+            margin-bottom: 20px;
+            border-radius: 15px;
+        }
+        .main-content {
+            padding-left: 0;
+        }
+        .container-fluid {
+            flex-direction: column;
+        }
     }
 </style>
 
@@ -335,13 +442,15 @@
         if (section.style.display === 'none' || section.classList.contains('hidden')) {
             section.style.display = 'block';
             section.classList.remove('hidden');
+            section.style.opacity = 1; // Устанавливаем видимость при открытии
+            section.style.transform = 'translateY(0)';
         } else {
             section.style.opacity = 0;
             section.style.transform = 'translateY(20px)';
             setTimeout(() => {
                 section.style.display = 'none';
                 section.classList.add('hidden');
-            }, 300);
+            }, 300); // Исправлено: используется `section`, а не `sec`
         }
     }
 
@@ -364,12 +473,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-
+        // Обработка отправки форм
         document.querySelectorAll('form[id$="-form"]').forEach(form => {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const formData = new FormData(form);
-                const url = form.action;
+                const url = form.action || `/dashboard/${form.id.split('-')[1]}/create/`;
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
@@ -379,10 +488,12 @@
                     const data = await response.json();
                     if (data.success) {
                         const list = document.getElementById(`${form.id.split('-')[1]}s-list`);
-                        const card = createCard(data.item, form.id.split('-')[1]);
-                        list.insertAdjacentHTML('afterbegin', card);
+                        const item = createItem(data.item, form.id.split('-')[1]);
+                        list.insertAdjacentHTML('afterbegin', item);
                         form.reset();
-                        document.getElementById('task-fields').innerHTML = ''; 
+                        if (form.id === 'create-project-form') {
+                            document.getElementById('task-fields').innerHTML = '';
+                        }
                     } else {
                         alert('Error: ' + data.error);
                     }
@@ -392,18 +503,21 @@
             });
         });
 
+        // Обработка редактирования
         document.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('edit-btn')) {
-                const card = e.target.closest('.task-card');
-                const id = card.dataset.id;
-                const type = card.closest('.section').id.split('-')[0];
-                const fields = card.querySelectorAll('.editable');
+            if (e.target.classList.contains('edit-btn') && e.target.tagName !== 'A') {
+                const item = e.target.closest('.task-item');
+                const id = item.dataset.id;
+                const type = item.closest('.section').id.split('-')[0];
+                const fields = item.querySelectorAll('.editable');
                 
                 fields.forEach(field => {
-                    const currentValue = field.textContent;
+                    const currentValue = field.textContent.trim();
                     const fieldName = field.dataset.field;
                     if (fieldName === 'deadline' || fieldName === 'due_date') {
-                        field.innerHTML = `<input type="datetime-local" name="${fieldName}" value="${currentValue.split(' ').reverse().join('T').replace(':', '')}" />`;
+                        // Форматируем дату для input datetime-local
+                        const date = new Date(currentValue).toISOString().slice(0, 16);
+                        field.innerHTML = `<input type="datetime-local" name="${fieldName}" value="${date}" />`;
                     } else if (fieldName === 'stage') {
                         field.innerHTML = `<input type="number" name="${fieldName}" value="${currentValue}" min="0" />`;
                     } else {
@@ -415,11 +529,11 @@
                 e.target.classList.remove('edit-btn');
                 e.target.classList.add('save-btn');
             } else if (e.target.classList.contains('save-btn')) {
-                const card = e.target.closest('.task-card');
-                const id = card.dataset.id;
-                const type = card.closest('.section').id.split('-')[0];
+                const item = e.target.closest('.task-item');
+                const id = item.dataset.id;
+                const type = item.closest('.section').id.split('-')[0];
                 const formData = new FormData();
-                card.querySelectorAll('input').forEach(input => {
+                item.querySelectorAll('input').forEach(input => {
                     formData.append(input.name, input.value);
                 });
 
@@ -431,7 +545,7 @@
                     });
                     const data = await response.json();
                     if (data.success) {
-                        updateCard(card, data.item);
+                        updateItem(item, data.item, type);
                         e.target.textContent = 'Edit';
                         e.target.classList.remove('save-btn');
                         e.target.classList.add('edit-btn');
@@ -444,10 +558,11 @@
             }
         });
 
+        // Обработка удаления
         document.addEventListener('click', async (e) => {
             if (e.target.classList.contains('delete-btn')) {
-                const card = e.target.closest('.task-card');
-                const id = card.dataset.id;
+                const item = e.target.closest('.task-item');
+                const id = item.dataset.id;
                 const url = e.target.dataset.url;
 
                 try {
@@ -457,7 +572,7 @@
                     });
                     const data = await response.json();
                     if (data.success) {
-                        card.remove();
+                        item.remove();
                     } else {
                         alert('Error: ' + data.error);
                     }
@@ -467,11 +582,13 @@
             }
         });
 
+        // Обработка переключения состояния (complete/reopen, close/reopen)
         document.addEventListener('click', async (e) => {
             if (e.target.classList.contains('toggle-complete')) {
-                const card = e.target.closest('.task-card');
-                const id = card.dataset.id;
-                const url = e.target.dataset.url || `/dashboard/${card.closest('.section').id.split('-')[0]}/${id}/${e.target.textContent.toLowerCase()}/`;
+                const item = e.target.closest('.task-item');
+                const id = item.dataset.id;
+                const type = item.closest('.section').id.split('-')[0];
+                const url = e.target.dataset.url || `/dashboard/${type}/${id}/${e.target.textContent.toLowerCase()}/`;
 
                 try {
                     const response = await fetch(url, {
@@ -480,7 +597,7 @@
                     });
                     const data = await response.json();
                     if (data.success) {
-                        updateCard(card, data.item);
+                        updateItem(item, data.item, type);
                     } else {
                         alert('Error: ' + data.error);
                     }
@@ -492,58 +609,143 @@
     });
 
     function getCsrfToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
     }
 
-    function createCard(item, type) {
-        const template = {
+    function createItem(item, type) {
+        const templates = {
             task: `
-                <div class="card task-card ${item.completed ? 'border-success' : 'border-warning'}" data-id="${item.id}">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-dark editable" data-field="title">${item.title}</h5>
-                        <p class="card-text text-muted editable" data-field="description">${item.description.slice(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
-                        <p><strong>Stage:</strong> <span class="badge bg-info editable" data-field="stage">${item.stage}</span></p>
-                        <p><strong>Deadline:</strong> <span class="editable" data-field="deadline">${new Date(item.deadline).toLocaleString()}</span></p>
-                        <div class="d-flex justify-content-center gap-2 flex-wrap">
-                            <button class="btn btn-sm ${item.completed ? 'btn-warning' : 'btn-success'} hover-btn toggle-complete" data-id="${item.id}">${item.completed ? 'Reopen' : 'Complete'}</button>
-                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}">Edit</button>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/task/${item.id}/delete/">Delete</button>
-                        </div>
+                <div class="task-item ${item.completed ? 'border-success' : 'border-warning'}" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                    <h5 class="card-title text-dark editable" data-field="title" style="font-size: 1.1rem; margin-bottom: 5px;">${item.title}</h5>
+                    <p class="card-text text-muted editable" data-field="description" style="font-size: 0.85rem; margin-bottom: 5px;">${item.description.slice(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
+                    <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Stage:</strong> <span class="badge bg-info editable" data-field="stage">${item.stage}</span></p>
+                    <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Deadline:</strong> <span class="editable" data-field="deadline">${new Date(item.deadline).toLocaleString()}</span></p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <button class="btn btn-sm ${item.completed ? 'btn-warning' : 'btn-success'} hover-btn toggle-complete" data-id="${item.id}" style="font-size: 0.75rem; padding: 4px 8px;">${item.completed ? 'Reopen' : 'Complete'}</button>
+                        <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                        <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/task/${item.id}/delete/" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
                     </div>
                 </div>
             `,
             project: `
-                <div class="card task-card" data-id="${item.id}">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-dark editable" data-field="name">${item.name}</h5>
-                        <p class="card-text text-muted editable" data-field="description">${item.description.slice(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
-                        <p><strong>Members:</strong> <span class="badge bg-success">${item.members_count}</span></p>
-                        <p><strong>Tasks:</strong> <span class="badge bg-primary">${item.tasks_count}</span></p>
-                        <div class="d-flex justify-content-center gap-2">
-                            <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}">Edit</button>
-                            <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/project/${item.id}/delete/">Delete</button>
-                        </div>
+                <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                    <h5 class="card-title text-dark editable" data-field="name" style="font-size: 1.1rem; margin-bottom: 5px;">${item.name}</h5>
+                    <p class="card-text text-muted editable" data-field="description" style="font-size: 0.85rem; margin-bottom: 5px;">${item.description.slice(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
+                    <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Members:</strong> <span class="badge bg-success">${item.members_count || item.members?.length || 0}</span></p>
+                    <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Tasks:</strong> <span class="badge bg-primary">${item.tasks_count || item.tasks?.length || 0}</span></p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                        <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/project/${item.id}/delete/" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
                     </div>
                 </div>
             `,
+            deadline: `
+                <div class="task-item ${item.is_overdue ? 'border-danger' : item.is_completed ? 'border-success' : 'border-warning'}" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                    <h5 class="card-title text-dark editable" data-field="title" style="font-size: 1.1rem; margin-bottom: 5px;">${item.title}</h5>
+                    <p class="card-text text-muted editable" data-field="description" style="font-size: 0.85rem; margin-bottom: 5px;">${item.description.slice(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
+                    <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Due:</strong> <span class="editable" data-field="due_date">${new Date(item.due_date).toLocaleString()}</span></p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                        <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/deadline/${item.id}/delete/" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
+                        <button class="btn btn-sm ${item.is_completed ? 'btn-warning' : 'btn-success'} hover-btn toggle-complete" data-id="${item.id}" data-url="${item.is_completed ? `/dashboard/deadline/${item.id}/reopen/` : `/dashboard/deadline/${item.id}/close/`}" style="font-size: 0.75rem; padding: 4px 8px;">${item.is_completed ? 'Reopen' : 'Complete'}</button>
+                    </div>
+                </div>
+            `,
+            comment: `
+                <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                    <p class="text-muted editable" data-field="text" style="font-size: 0.85rem; margin-bottom: 5px;">${item.text.slice(0, 75)}${item.text.length > 75 ? '...' : ''}</p>
+                    <small class="text-info" style="font-size: 0.8rem;">Task: <span class="editable" data-field="task">${item.task_title || item.task?.title || 'N/A'}</span></small>
+                    <div class="d-flex justify-content-center gap-2 mt-2">
+                        <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                        <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/comment/${item.id}/delete/" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
+                    </div>
+                </div>
+            `,
+            issue: `
+                <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                    <p class="text-muted editable" data-field="text" style="font-size: 0.85rem; margin-bottom: 5px;">${item.text.slice(0, 75)}${item.text.length > 75 ? '...' : ''}</p>
+                    <small class="text-danger" style="font-size: 0.8rem;">Task: <span class="editable" data-field="task">${item.task_title || item.task?.title || 'N/A'}</span></small>
+                    <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
+                        <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                        <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/issue/${item.id}/delete/" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
+                        <button class="btn btn-sm ${item.closed ? 'btn-warning' : 'btn-success'} hover-btn toggle-complete" data-id="${item.id}" data-url="${item.closed ? `/dashboard/issue/${item.id}/reopen/` : `/dashboard/issue/${item.id}/close/`}" style="font-size: 0.75rem; padding: 4px 8px;">${item.closed ? 'Reopen' : 'Close'}</button>
+                    </div>
+                </div>
+            `,
+            label: `
+                <div class="task-item" data-id="${item.id}" style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                    <span class="badge d-block mb-2 editable" style="background-color: ${item.color}; color: ${item.color.toLowerCase() === '#ffffff' || item.color.toLowerCase() === '#f0f0f0' || item.color.toLowerCase() === '#e0e0e0' || item.color.toLowerCase() === '#d0d0d0' || item.color.toLowerCase() === '#c0c0c0' ? '#000000' : '#ffffff'}; padding: 0.4em 0.8em; font-size: 0.85rem;" data-field="name">${item.name}</span>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button class="btn btn-sm btn-primary hover-btn edit-btn" data-id="${item.id}" style="font-size: 0.75rem; padding: 4px 8px;">Edit</button>
+                        <button class="btn btn-sm btn-danger hover-btn delete-btn" data-id="${item.id}" data-url="/dashboard/label/${item.id}/delete/" style="font-size: 0.75rem; padding: 4px 8px;">Delete</button>
+                    </div>
+                </div>
+            `
         };
-        return template[type] || '';
+        return templates[type] || '';
     }
 
-    function updateCard(card, item) {
-        const type = card.closest('.section').id.split('-')[0];
-        if (type === 'task') {
-            card.classList.toggle('border-success', item.completed);
-            card.classList.toggle('border-warning', !item.completed);
-            card.querySelector('[data-field="title"]').textContent = item.title;
-            card.querySelector('[data-field="description"]').textContent = item.description.slice(0, 50) + (item.description.length > 50 ? '...' : '');
-            card.querySelector('[data-field="stage"]').textContent = item.stage;
-            card.querySelector('[data-field="deadline"]').textContent = new Date(item.deadline).toLocaleString();
-            const toggleBtn = card.querySelector('.toggle-complete');
-            toggleBtn.textContent = item.completed ? 'Reopen' : 'Complete';
-            toggleBtn.classList.toggle('btn-warning', item.completed);
-            toggleBtn.classList.toggle('btn-success', !item.completed);
-            toggleBtn.dataset.url = item.completed ? `/dashboard/task/${item.id}/reopen/` : `/dashboard/task/${item.id}/complete/`;
+    function updateItem(item, data, type) {
+        switch (type) {
+            case 'task':
+                item.classList.toggle('border-success', data.completed);
+                item.classList.toggle('border-warning', !data.completed);
+                item.querySelector('[data-field="title"]').textContent = data.title;
+                item.querySelector('[data-field="description"]').textContent = data.description.slice(0, 50) + (data.description.length > 50 ? '...' : '');
+                item.querySelector('[data-field="stage"]').textContent = data.stage;
+                item.querySelector('[data-field="deadline"]').textContent = new Date(data.deadline).toLocaleString();
+                const taskToggleBtn = item.querySelector('.toggle-complete');
+                taskToggleBtn.textContent = data.completed ? 'Reopen' : 'Complete';
+                taskToggleBtn.classList.toggle('btn-warning', data.completed);
+                taskToggleBtn.classList.toggle('btn-success', !data.completed);
+                taskToggleBtn.dataset.url = data.completed ? `/dashboard/task/${data.id}/reopen/` : `/dashboard/task/${data.id}/complete/`;
+                break;
+
+            case 'project':
+                item.querySelector('[data-field="name"]').textContent = data.name;
+                item.querySelector('[data-field="description"]').textContent = data.description.slice(0, 50) + (data.description.length > 50 ? '...' : '');
+                item.querySelector('p:has(> .bg-success)').textContent = `Members: ${data.members_count || data.members?.length || 0}`;
+                item.querySelector('p:has(> .bg-primary)').textContent = `Tasks: ${data.tasks_count || data.tasks?.length || 0}`;
+                break;
+
+            case 'deadline':
+                item.classList.toggle('border-danger', data.is_overdue);
+                item.classList.toggle('border-success', data.is_completed && !data.is_overdue);
+                item.classList.toggle('border-warning', !data.is_completed && !data.is_overdue);
+                item.querySelector('[data-field="title"]').textContent = data.title;
+                item.querySelector('[data-field="description"]').textContent = data.description.slice(0, 50) + (data.description.length > 50 ? '...' : '');
+                item.querySelector('[data-field="due_date"]').textContent = new Date(data.due_date).toLocaleString();
+                const deadlineToggleBtn = item.querySelector('.toggle-complete');
+                deadlineToggleBtn.textContent = data.is_completed ? 'Reopen' : 'Complete';
+                deadlineToggleBtn.classList.toggle('btn-warning', data.is_completed);
+                deadlineToggleBtn.classList.toggle('btn-success', !data.is_completed);
+                deadlineToggleBtn.dataset.url = data.is_completed ? `/dashboard/deadline/${data.id}/reopen/` : `/dashboard/deadline/${data.id}/close/`;
+                break;
+
+            case 'comment':
+                item.querySelector('[data-field="text"]').textContent = data.text.slice(0, 75) + (data.text.length > 75 ? '...' : '');
+                item.querySelector('[data-field="task"]').textContent = data.task_title || data.task?.title || 'N/A';
+                break;
+
+            case 'issue':
+                item.querySelector('[data-field="text"]').textContent = data.text.slice(0, 75) + (data.text.length > 75 ? '...' : '');
+                item.querySelector('[data-field="task"]').textContent = data.task_title || data.task?.title || 'N/A';
+                const issueToggleBtn = item.querySelector('.toggle-complete');
+                issueToggleBtn.textContent = data.closed ? 'Reopen' : 'Close';
+                issueToggleBtn.classList.toggle('btn-warning', data.closed);
+                issueToggleBtn.classList.toggle('btn-success', !data.closed);
+                issueToggleBtn.dataset.url = data.closed ? `/dashboard/issue/${data.id}/reopen/` : `/dashboard/issue/${data.id}/close/`;
+                break;
+
+            case 'label':
+                const badge = item.querySelector('.badge.editable');
+                badge.textContent = data.name;
+                badge.style.backgroundColor = data.color;
+                badge.style.color = data.color.toLowerCase() === '#ffffff' || data.color.toLowerCase() === '#f0f0f0' || data.color.toLowerCase() === '#e0e0e0' || data.color.toLowerCase() === '#d0d0d0' || data.color.toLowerCase() === '#c0c0c0' ? '#000000' : '#ffffff';
+                break;
+
+            default:
+                console.warn(`Unsupported item type: ${type}`);
         }
     }
 </script>
