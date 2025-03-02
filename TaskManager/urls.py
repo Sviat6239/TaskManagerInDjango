@@ -25,8 +25,10 @@ from taskapp.views import (
     add_issue, update_issue, delete_issue,
     add_label, update_label, delete_label,
     close_issue, reopen_issue,
-    create_deadline, update_deadline, delete_deadline, close_deadline, reopen_deadline
+    create_deadline, update_deadline, delete_deadline, close_deadline, reopen_deadline,
+    get_list, close_task
 )
+
 urlpatterns = [
     path('', index, name='index'),
     path('about/', about, name='about'),
@@ -37,6 +39,8 @@ urlpatterns = [
     path('dashboard/create_task/', create_task, name='create_task'),
     path('dashboard/task/<int:task_id>/update/', update_task, name='update_task'),
     path('dashboard/task/<int:task_id>/delete/', delete_task, name='delete_task'),
+    path('dashboard/task/<int:task_id>/complete/', lambda request, task_id: close_task(request, task_id, complete=True), name='complete_task'),  # Добавлено
+    path('dashboard/task/<int:task_id>/reopen/', lambda request, task_id: close_task(request, task_id, complete=False), name='reopen_task'),  # Добавлено
 
     # Project
     path('dashboard/create_project/', create_project, name='create_project'),
@@ -66,6 +70,8 @@ urlpatterns = [
     path('dashboard/deadline/<int:deadline_id>/delete/', delete_deadline, name='delete_deadline'),
     path('dashboard/deadline/<int:deadline_id>/close/', close_deadline, name='close_deadline'),
     path('dashboard/deadline/<int:deadline_id>/reopen/', reopen_deadline, name='reopen_deadline'),
+
+    path('dashboard/<str:type>/', get_list, name='get_list'),
 
     path('admin/', admin.site.urls),
     path('register/', register, name='register'),

@@ -24,6 +24,10 @@ def dashboard(request):
     deadlines = Deadline.objects.filter(owner=request.user)
     notifications = Notification.objects.filter(user=request.user, read=False)
 
+    print(f"Tasks: {tasks}")
+    print(f"Projects: {projects}")
+    print(f"Deadlines: {deadlines}")
+
     context = {
         'tasks': tasks,
         'projects': projects,
@@ -112,6 +116,37 @@ def delete_task(request, task_id):
         task.delete()
         if is_ajax:
             return JsonResponse({'success': True})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return redirect('dashboard')
+
+@login_required
+@csrf_exempt
+def close_task(request, task_id, complete=True):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        task.completed = complete
+        task.save()
+        action = "completed" if complete else "reopened"
+        Notification.objects.create(
+            user=request.user,
+            task=task,
+            message=f"Task '{task.title[:50]}...' {action}"
+        )
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': task.id,
+                    'title': task.title,
+                    'description': task.description,
+                    'stage': task.stage,
+                    'deadline': task.deadline.isoformat() if task.deadline else None,
+                    'completed': task.completed
+                }
+            })
         return redirect('dashboard')
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
@@ -627,3 +662,35 @@ def reopen_deadline(request, deadline_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
+
+@login_required
+@csrf_exempt
+def get_list(request, type):
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        items = []
+        if type == 'task':
+            items = Task.objects.filter(user=request.user).values(
+                'id', 'title', 'description', 'stage', 'deadline', 'completed'
+            )
+        elif type == 'project':
+            items = Project.objects.filter(owner=request.user).values(
+                'id', 'name', 'description', 'members_count', 'tasks_count'
+            )
+        elif type == 'deadline':
+            items = Deadline.objects.filter(owner=request.user).values(
+                'id', 'title', 'due_date', 'task__title', 'description', 'is_completed', 'is_overdue'
+            )
+        elif type == 'comment':
+            items = Comment.objects.filter(user=request.user).values(
+                'id', 'text', 'task__title'
+            )
+        elif type == 'issue':
+            items = Issue.objects.filter(user=request.user).values(
+                'id', 'text', 'task__title', 'closed'
+            )
+        elif type == 'label':
+            items = Label.objects.all().values(
+                'id', 'name', 'color'
+            )
+        return JsonResponse({'success': True, 'items': list(items)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
