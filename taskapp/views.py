@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm, DeadlineForm
 from .models import Task, Comment, Project, Label, Issue, Notification, Deadline
 
@@ -41,62 +42,86 @@ def dashboard(request):
     return render(request, 'dashboard.html', context)
 
 @login_required
+@csrf_exempt
 def create_task(request):
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = TaskForm(request.POST, request.FILES)
         if form.is_valid():
             task = form.save(commit=False)
             task.user = request.user
             task.save()
             form.save_m2m()
-            return JsonResponse({
-                'success': True,
-                'item': {
-                    'id': task.id,
-                    'title': task.title,
-                    'description': task.description,
-                    'stage': task.stage,
-                    'deadline': task.deadline.isoformat(),
-                    'completed': task.completed
-                }
-            })
-        return JsonResponse({'success': False, 'error': str(form.errors)})
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': task.id,  
+                        'title': task.title,
+                        'description': task.description,
+                        'stage': task.stage,
+                        'deadline': task.deadline.isoformat() if task.deadline else None,
+                        'completed': task.completed
+                    }
+                })
+            return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def update_task(request, task_id):
     task = get_object_or_404(Task, id=task_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = TaskForm(request.POST, request.FILES, instance=task)
         if form.is_valid():
             task = form.save(commit=False)
             task.save()
             form.save_m2m()
-            return JsonResponse({
-                'success': True,
-                'item': {
-                    'id': task.id,
-                    'title': task.title,
-                    'description': task.description,
-                    'stage': task.stage,
-                    'deadline': task.deadline.isoformat(),
-                    'completed': task.completed
-                }
-            })
-        return JsonResponse({'success': False, 'error': str(form.errors)})
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': task.id,
+                        'title': task.title,
+                        'description': task.description,
+                        'stage': task.stage,
+                        'deadline': task.deadline.isoformat() if task.deadline else None,
+                        'completed': task.completed
+                    }
+                })
+            return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def delete_task(request, task_id):
     task = get_object_or_404(Task, id=task_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         task.delete()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+        if is_ajax:
+            return JsonResponse({'success': True})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def create_project(request):
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = ProjectForm(request.POST)
         if form.is_valid():
             project = form.save(commit=False)
@@ -129,116 +154,278 @@ def create_project(request):
 
                 task_count += 1
 
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': project.id,
+                        'name': project.name,
+                        'description': project.description,
+                        'members_count': project.members.count(),
+                        'tasks_count': project.tasks.count()
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def update_project(request, project_id):
     project = get_object_or_404(Project, id=project_id, owner=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             project = form.save(commit=False)
             project.save()
             form.save_m2m()
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': project.id,
+                        'name': project.name,
+                        'description': project.description,
+                        'members_count': project.members.count(),
+                        'tasks_count': project.tasks.count()
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def delete_project(request, project_id):
     project = get_object_or_404(Project, id=project_id, owner=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         project.delete()
+        if is_ajax:
+            return JsonResponse({'success': True})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def add_comment(request):
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = CommentForm(request.POST, request.FILES)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.user = request.user
             comment.save()
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': comment.id,
+                        'text': comment.text,
+                        'task_title': comment.task.title if comment.task else 'N/A'
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def update_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = CommentForm(request.POST, request.FILES, instance=comment)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.save()
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': comment.id,
+                        'text': comment.text,
+                        'task_title': comment.task.title if comment.task else 'N/A'
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def delete_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         comment.delete()
+        if is_ajax:
+            return JsonResponse({'success': True})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def add_issue(request):
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = IssueForm(request.POST, request.FILES)
         if form.is_valid():
             issue = form.save(commit=False)
             issue.user = request.user
             issue.save()
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': issue.id,
+                        'text': issue.text,
+                        'task_title': issue.task.title if issue.task else 'N/A',
+                        'closed': issue.closed
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def update_issue(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = IssueForm(request.POST, request.FILES, instance=issue)
         if form.is_valid():
             issue = form.save(commit=False)
             issue.save()
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': issue.id,
+                        'text': issue.text,
+                        'task_title': issue.task.title if issue.task else 'N/A',
+                        'closed': issue.closed
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def delete_issue(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         issue.delete()
+        if is_ajax:
+            return JsonResponse({'success': True})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def add_label(request):
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = LabelForm(request.POST)
         if form.is_valid():
-            form.save()
+            label = form.save()
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': label.id,
+                        'name': label.name,
+                        'color': label.color
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def update_label(request, label_id):
     label = get_object_or_404(Label, id=label_id)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = LabelForm(request.POST, instance=label)
         if form.is_valid():
-            form.save()
+            label = form.save()
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': label.id,
+                        'name': label.name,
+                        'color': label.color
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def delete_label(request, label_id):
     label = get_object_or_404(Label, id=label_id)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         label.delete()
+        if is_ajax:
+            return JsonResponse({'success': True})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def close_issue(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         issue.closed = True
         issue.save()
         Notification.objects.create(
@@ -246,12 +433,27 @@ def close_issue(request, issue_id):
             task=issue.task,
             message=f"Issue '{issue.text[:50]}...' closed"
         )
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': issue.id,
+                    'text': issue.text,
+                    'task_title': issue.task.title if issue.task else 'N/A',
+                    'closed': issue.closed
+                }
+            })
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def reopen_issue(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, user=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         issue.closed = False
         issue.save()
         Notification.objects.create(
@@ -259,11 +461,26 @@ def reopen_issue(request, issue_id):
             task=issue.task,
             message=f"Issue '{issue.text[:50]}...' reopened"
         )
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': issue.id,
+                    'text': issue.text,
+                    'task_title': issue.task.title if issue.task else 'N/A',
+                    'closed': issue.closed
+                }
+            })
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def create_deadline(request):
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = DeadlineForm(request.POST)
         if form.is_valid():
             deadline = form.save(commit=False)
@@ -274,13 +491,33 @@ def create_deadline(request):
                 task=deadline.task,
                 message=f"New deadline created: {deadline.title}"
             )
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': deadline.id,
+                        'title': deadline.title,
+                        'due_date': deadline.due_date.isoformat() if deadline.due_date else None,
+                        'task_title': deadline.task.title if deadline.task else 'N/A',
+                        'description': deadline.description,
+                        'is_completed': deadline.is_completed,
+                        'is_overdue': deadline.is_overdue
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def update_deadline(request, deadline_id):
     deadline = get_object_or_404(Deadline, id=deadline_id, owner=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         form = DeadlineForm(request.POST, instance=deadline)
         if form.is_valid():
             deadline = form.save()
@@ -289,25 +526,52 @@ def update_deadline(request, deadline_id):
                 task=deadline.task,
                 message=f"Deadline '{deadline.title}' updated"
             )
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'item': {
+                        'id': deadline.id,
+                        'title': deadline.title,
+                        'due_date': deadline.due_date.isoformat() if deadline.due_date else None,
+                        'task_title': deadline.task.title if deadline.task else 'N/A',
+                        'description': deadline.description,
+                        'is_completed': deadline.is_completed,
+                        'is_overdue': deadline.is_overdue
+                    }
+                })
             return redirect('dashboard')
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': str(form.errors)})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def delete_deadline(request, deadline_id):
     deadline = get_object_or_404(Deadline, id=deadline_id, owner=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         deadline.delete()
         Notification.objects.create(
             user=request.user,
             task=deadline.task,
             message=f"Deadline '{deadline.title}' deleted"
         )
+        if is_ajax:
+            return JsonResponse({'success': True})
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def close_deadline(request, deadline_id):
     deadline = get_object_or_404(Deadline, id=deadline_id, owner=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         deadline.is_completed = True
         deadline.save()
         Notification.objects.create(
@@ -315,12 +579,30 @@ def close_deadline(request, deadline_id):
             task=deadline.task,
             message=f"Deadline '{deadline.title}' completed"
         )
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': deadline.id,
+                    'title': deadline.title,
+                    'due_date': deadline.due_date.isoformat() if deadline.due_date else None,
+                    'task_title': deadline.task.title if deadline.task else 'N/A',
+                    'description': deadline.description,
+                    'is_completed': deadline.is_completed,
+                    'is_overdue': deadline.is_overdue
+                }
+            })
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
 
 @login_required
+@csrf_exempt
 def reopen_deadline(request, deadline_id):
     deadline = get_object_or_404(Deadline, id=deadline_id, owner=request.user)
     if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         deadline.is_completed = False
         deadline.save()
         Notification.objects.create(
@@ -328,4 +610,20 @@ def reopen_deadline(request, deadline_id):
             task=deadline.task,
             message=f"Deadline '{deadline.title}' reopened"
         )
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': deadline.id,
+                    'title': deadline.title,
+                    'due_date': deadline.due_date.isoformat() if deadline.due_date else None,
+                    'task_title': deadline.task.title if deadline.task else 'N/A',
+                    'description': deadline.description,
+                    'is_completed': deadline.is_completed,
+                    'is_overdue': deadline.is_overdue
+                }
+            })
+        return redirect('dashboard')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
     return redirect('dashboard')
