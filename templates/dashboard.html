@@ -86,18 +86,21 @@
                         <form method="post" id="create-project-form" enctype="multipart/form-data">
                             {% csrf_token %}
                             {{ project_form.as_p }}
-                            <div>
+                            <div id="tasks-container">
                                 <h6 style="font-size: 0.9rem;">Tasks (Optional)</h6>
-                                {% for i in '123' %}
-                                <div style="border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; border-radius: 5px; background: #f9f9f9;">
-                                    <input type="text" name="task_title_{{ i }}" placeholder="Task Title" class="form-control mb-2">
-                                    <textarea name="task_description_{{ i }}" placeholder="Task Description" rows="2" class="form-control mb-2"></textarea>
-                                    <input type="datetime-local" name="task_deadline_{{ i }}" class="form-control mb-2">
-                                    <input type="number" name="task_stage_{{ i }}" placeholder="Stage" min="0" value="0" class="form-control mb-2">
-                                    <input type="checkbox" name="task_completed_{{ i }}" id="completed_{{ i }}" class="form-check-input mb-2">
-                                    <label for="completed_{{ i }}" class="form-check-label">Completed</label>
+                                <div id="task-fields">
+                                    <!-- Начальное поле для задачи -->
+                                    <div class="task-field" style="border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; border-radius: 5px; background: #f9f9f9;">
+                                        <input type="text" name="task_title_0" placeholder="Task Title" class="form-control mb-2" required>
+                                        <textarea name="task_description_0" placeholder="Task Description" rows="2" class="form-control mb-2"></textarea>
+                                        <input type="datetime-local" name="task_deadline_0" class="form-control mb-2" required>
+                                        <input type="number" name="task_stage_0" placeholder="Stage" min="0" value="0" class="form-control mb-2">
+                                        <input type="checkbox" name="task_completed_0" id="completed_0" class="form-check-input mb-2">
+                                        <label for="completed_0" class="form-check-label">Completed</label>
+                                        <button type="button" class="btn btn-danger btn-sm mt-2 remove-task" style="font-size: 0.75rem; padding: 4px 8px;">Remove</button>
+                                    </div>
                                 </div>
-                                {% endfor %}
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2 add-task" style="font-size: 0.75rem; padding: 4px 8px;">Add Task</button>
                             </div>
                             <button type="submit" class="btn btn-success w-100 mt-2 crud-action">Create Project</button>
                         </form>
