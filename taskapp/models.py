@@ -2,7 +2,11 @@ from django.db import models
 from auth_app.models import CustomUser
 
 class Task(models.Model):
-    access = models.ManyToManyField(CustomUser, related_name='shared_tasks', help_text="Users with access to the task")
+    access = models.CharField(
+        max_length=255, 
+        blank=True, 
+        help_text="Comma-separated UIDs of friends with access to the task"
+    )
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True, help_text="Attach a file")
     completed = models.BooleanField(default=False, help_text="Mark as completed")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -19,6 +23,33 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_access_uids(self):
+        if self.access:
+            return [uid.strip() for uid in self.access.split(',') if uid.strip()]
+        return []
+
+    def set_access_uids(self, uid_list):
+        self.access = ','.join([str(uid) for uid in uid_list if uid])
+
+    def add_friend_access(self, friend_uid):
+        current_uids = self.get_access_uids()
+        if str(friend_uid) not in current_uids:
+            current_uids.append(str(friend_uid))
+            self.set_access_uids(current_uids)
+            return True
+        return False
+
+    def remove_friend_access(self, friend_uid):
+        current_uids = self.get_access_uids()
+        if str(friend_uid) in current_uids:
+            current_uids.remove(str(friend_uid))
+            self.set_access_uids(current_uids)
+            return True
+        return False
+
+    def has_access(self, user):
+        return user == self.user or str(user.uid) in self.get_access_uids()
 
 class Comment(models.Model):
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True, help_text="Attach a file")

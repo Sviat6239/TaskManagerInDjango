@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm, DeadlineForm
 from .models import Task, Comment, Project, Label, Issue, Notification, Deadline
+from auth_app.models import CustomUser
 
 def index(request):
     return render(request, 'index.html')
@@ -16,26 +17,31 @@ def contact(request):
 
 @login_required
 def dashboard(request):
-    tasks = Task.objects.filter(user=request.user)
+    own_tasks = Task.objects.filter(user=request.user)
+    accessible_tasks = Task.objects.filter(access__contains=request.user.uid).exclude(user=request.user)
+    tasks = own_tasks | accessible_tasks  
+    
     projects = Project.objects.filter(owner=request.user)
     comments = Comment.objects.filter(user=request.user)
     issues = Issue.objects.filter(user=request.user)
     labels = Label.objects.all()
     deadlines = Deadline.objects.filter(owner=request.user)
     notifications = Notification.objects.filter(user=request.user, read=False)
+    friends = request.user.friends.all()
 
     print(f"Tasks: {tasks}")
     print(f"Projects: {projects}")
     print(f"Deadlines: {deadlines}")
 
     context = {
-        'tasks': tasks,
+        'tasks': tasks.distinct(),  
         'projects': projects,
         'comments': comments,
         'issues': issues,
         'labels': labels,
         'deadlines': deadlines,
         'notifications': notifications,
+        'friends': friends,
         'task_form': TaskForm(),
         'project_form': ProjectForm(),
         'comment_form': CommentForm(),
@@ -44,6 +50,199 @@ def dashboard(request):
         'deadline_form': DeadlineForm(),
     }
     return render(request, 'dashboard.html', context)
+
+@login_required
+@csrf_exempt
+def add_friend(request):
+    if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        friend_uid = request.POST.get('friend_uid')
+        
+        try:
+            friend = CustomUser.objects.get(uid=friend_uid)
+            if friend != request.user and request.user.add_friend(friend):
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'friend': {
+                            'id': friend.id,
+                            'email': friend.email,
+                            'uid': friend.uid,
+                            'first_name': friend.first_name,
+                            'last_name': friend.last_name
+                        }
+                    })
+                return redirect('dashboard')
+            else:
+                error_msg = 'User is already your friend or invalid operation'
+        except CustomUser.DoesNotExist:
+            error_msg = 'User with this UID does not exist'
+
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': error_msg})
+        return redirect('dashboard')
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return redirect('dashboard')
+
+@login_required
+@csrf_exempt
+def remove_friend(request):
+    if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        friend_uid = request.POST.get('friend_uid')
+        
+        try:
+            friend = CustomUser.objects.get(uid=friend_uid)
+            if friend != request.user and request.user.remove_friend(friend):
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'friend': {
+                            'id': friend.id,
+                            'email': friend.email,
+                            'uid': friend.uid,
+                            'first_name': friend.first_name,
+                            'last_name': friend.last_name
+                        }
+                    })
+                return redirect('dashboard')
+            else:
+                error_msg = 'User is not your friend or invalid operation'
+        except CustomUser.DoesNotExist:
+            error_msg = 'User with this UID does not exist'
+
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': error_msg})
+        return redirect('dashboard')
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return redirect('dashboard')
+
+@login_required
+@csrf_exempt
+def manage_task_access(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        friend_uid = request.POST.get('friend_uid')
+        action = request.POST.get('action')
+
+        try:
+            friend = CustomUser.objects.get(uid=friend_uid)
+            if friend not in request.user.friends.all():
+                raise ValueError("This user is not your friend")
+
+            if action == 'add':
+                success = task.add_friend_access(friend_uid)
+                message = f"Access granted to {friend.email} for task '{task.title}'"
+            elif action == 'remove':
+                success = task.remove_friend_access(friend_uid)
+                message = f"Access removed for {friend.email} from task '{task.title}'"
+            else:
+                raise ValueError("Invalid action")
+
+            if success:
+                task.save()
+                Notification.objects.create(
+                    user=request.user,
+                    task=task,
+                    message=message
+                )
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'task_id': task.id,
+                        'access_uids': task.get_access_uids()
+                    })
+            else:
+                error_msg = 'No changes made to access'
+
+        except CustomUser.DoesNotExist:
+            error_msg = 'User with this UID does not exist'
+        except ValueError as e:
+            error_msg = str(e)
+
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': error_msg})
+        return redirect('dashboard')
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return redirect('dashboard')
+
+@login_required
+@csrf_exempt
+def get_friends(request):
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        friends = request.user.friends.all().values(
+            'id', 'email', 'uid', 'first_name', 'last_name'
+        )
+        return JsonResponse({'success': True, 'friends': list(friends)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+@csrf_exempt
+def get_access_list(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        access_list = task.get_access_uids()
+        return JsonResponse({'success': True, 'access_list': access_list})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+@csrf_exempt
+def manage_task_access(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        friend_uid = request.POST.get('friend_uid')
+        action = request.POST.get('action')
+
+        try:
+            friend = CustomUser.objects.get(uid=friend_uid)
+            if friend not in request.user.friends.all():
+                raise ValueError("This user is not your friend")
+
+            if action == 'add':
+                success = task.add_friend_access(friend_uid)
+                message = f"Access granted to {friend.email} for task '{task.title}'"
+            elif action == 'remove':
+                success = task.remove_friend_access(friend_uid)
+                message = f"Access removed for {friend.email} from task '{task.title}'"
+            else:
+                raise ValueError("Invalid action")
+
+            if success:
+                task.save()
+                Notification.objects.create(
+                    user=request.user,
+                    task=task,
+                    message=message
+                )
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'task_id': task.id,
+                        'access_uids': task.get_access_uids()
+                    })
+            else:
+                error_msg = 'No changes made to access'
+
+        except CustomUser.DoesNotExist:
+            error_msg = 'User with this UID does not exist'
+        except ValueError as e:
+            error_msg = str(e)
+
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': error_msg})
+        return redirect('dashboard')
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return redirect('dashboard')
 
 @login_required
 @csrf_exempt
@@ -669,9 +868,10 @@ def get_list(request, type):
     if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         items = []
         if type == 'task':
-            items = Task.objects.filter(user=request.user).values(
-                'id', 'title', 'description', 'stage', 'deadline', 'completed'
-            )
+            own_tasks = Task.objects.filter(user=request.user)
+            accessible_tasks = Task.objects.filter(access__contains=request.user.uid).exclude(user=request.user)
+            tasks = (own_tasks | accessible_tasks).distinct()
+            items = tasks.values('id', 'title', 'description', 'stage', 'deadline', 'completed')
         elif type == 'project':
             items = Project.objects.filter(owner=request.user).values(
                 'id', 'name', 'description', 'members_count', 'tasks_count'
