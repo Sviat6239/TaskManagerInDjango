@@ -110,3 +110,6 @@ class NotificationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['user'].queryset = CustomUser.objects.all()
         self.fields['task'].queryset = Task.objects.all()
+
+class AddFriendForm(forms.Form):
+    pass

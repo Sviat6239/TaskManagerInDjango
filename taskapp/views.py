@@ -1,3 +1,5 @@
+import re
+from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -867,30 +869,46 @@ def reopen_deadline(request, deadline_id):
 def get_list(request, type):
     if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         items = []
+        print(f"Fetching list for type: {type}")  # Отладка
         if type == 'task':
             own_tasks = Task.objects.filter(user=request.user)
-            accessible_tasks = Task.objects.filter(access__contains=request.user.uid).exclude(user=request.user)
+            try:
+                accessible_tasks = Task.objects.filter(access__regex=r'\b' + re.escape(str(request.user.uid)) + r'\b').exclude(user=request.user)
+            except re.error:
+                accessible_tasks = Task.objects.none()
             tasks = (own_tasks | accessible_tasks).distinct()
             items = tasks.values('id', 'title', 'description', 'stage', 'deadline', 'completed')
+            print(f"Tasks found: {len(items)}")  # Отладка
         elif type == 'project':
-            items = Project.objects.filter(owner=request.user).values(
-                'id', 'name', 'description', 'members_count', 'tasks_count'
-            )
+            items = Project.objects.filter(owner=request.user).annotate(
+                members_count=Count('members'),
+                tasks_count=Count('tasks')
+            ).values('id', 'name', 'description', 'members_count', 'tasks_count')
+            print(f"Projects found: {len(items)}")  # Отладка
         elif type == 'deadline':
             items = Deadline.objects.filter(owner=request.user).values(
                 'id', 'title', 'due_date', 'task__title', 'description', 'is_completed', 'is_overdue'
             )
+            print(f"Deadlines found: {len(items)}")  # Отладка
         elif type == 'comment':
             items = Comment.objects.filter(user=request.user).values(
                 'id', 'text', 'task__title'
             )
+            print(f"Comments found: {len(items)}")  # Отладка
         elif type == 'issue':
             items = Issue.objects.filter(user=request.user).values(
                 'id', 'text', 'task__title', 'closed'
             )
+            print(f"Issues found: {len(items)}")  # Отладка
         elif type == 'label':
-            items = Label.objects.all().values(
-                'id', 'name', 'color'
-            )
+            items = Label.objects.all().values('id', 'name', 'color')
+            print(f"Labels found: {len(items)}")  # Отладка
+        elif type == 'friends':
+            items = request.user.friends.all().values('id', 'first_name', 'last_name', 'uid')
+            print(f"Friends found: {len(items)}")  # Отладка
+        elif type == 'notifications':
+            items = Notification.objects.filter(user=request.user, read=False).values('id', 'message', 'created_at')
+            print(f"Notifications found: {len(items)}")  # Отладка
+        print(f"Returning items: {items}")  # Отладка
         return JsonResponse({'success': True, 'items': list(items)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
