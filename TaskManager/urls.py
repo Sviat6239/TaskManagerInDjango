@@ -71,6 +71,17 @@ urlpatterns = [
     path('dashboard/deadline/<int:deadline_id>/close/', close_deadline, name='close_deadline'),
     path('dashboard/deadline/<int:deadline_id>/reopen/', reopen_deadline, name='reopen_deadline'),
 
+    path('dashboard/add_friend/', lambda request: get_list(request, 'add_friend'), name='add_friend'),
+    path('dashboard/remove_friend/', lambda request: get_list(request, 'remove_friend'), name='remove_friend'),
+    path('dashboard/friends/', lambda request: get_list(request, 'friends'), name='friends'),
+    path('dashboard/add_friend_access/', lambda request: get_list(request, 'add_friend_access'), name='add_friend_access'),
+    path('dashboard/remove_friend_access/', lambda request: get_list(request, 'remove_friend_access'), name='remove_friend_access'),
+    path('dashboard/access_list/', lambda request: get_list(request, 'access_list'), name='access_list'),
+
+    path('dashboard/notifications/', lambda request: get_list(request, 'notifications'), name='notifications'),
+
+         
+
     path('dashboard/<str:type>/', get_list, name='get_list'),
 
     path('admin/', admin.site.urls),
