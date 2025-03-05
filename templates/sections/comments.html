@@ -1,13 +1,12 @@
-<div id="comments-section" class="section mb-5" style="display: none;">
-    <h3 class="mb-3 text-info text-center">Comments</h3>
+<div id="{{ section_id }}" class="section mb-5"
+    style="{% if active_section == section_id %}display: block;{% else %}display: none;{% endif %}">
     <div class="d-flex justify-content-center gap-4">
         <div class="card task-card" style="width: 320px;">
             <div class="card-header bg-info text-white text-center">
                 Comments List
                 <a href="{% url 'add_comment' %}" class="btn btn-sm btn-light ms-2">Add Comment</a>
             </div>
-            <div class="card-body comment-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;"
-                data-type="comment">
+            <div class="card-body comment-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
                 {% for comment in comments %}
                 <div class="task-item" data-id="{{ comment.id }}"
                     style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
