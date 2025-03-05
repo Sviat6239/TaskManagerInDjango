@@ -1,6 +1,6 @@
 from django import forms
-from .models import Task, Project, Comment, Issue, Label, Deadline, Notification
-from auth_app.models import CustomUser 
+from .models import Task, Project, Comment, Issue, Label, Notification
+from auth_app.models import CustomUser
 
 class TaskForm(forms.ModelForm):
     class Meta:
@@ -24,7 +24,7 @@ class TaskForm(forms.ModelForm):
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['name', 'description', 'members', 'tasks'] 
+        fields = ['name', 'description', 'members', 'tasks']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
@@ -80,22 +80,6 @@ class LabelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['tasks'].queryset = Task.objects.all()
 
-class DeadlineForm(forms.ModelForm):
-    class Meta:
-        model = Deadline
-        fields = ['title', 'due_date', 'task', 'description']
-        widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'task': forms.Select(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['task'].queryset = Task.objects.all()
-        self.fields['task'].required = False
-
 class NotificationForm(forms.ModelForm):
     class Meta:
         model = Notification
@@ -111,5 +95,3 @@ class NotificationForm(forms.ModelForm):
         self.fields['user'].queryset = CustomUser.objects.all()
         self.fields['task'].queryset = Task.objects.all()
 
-class AddFriendForm(forms.Form):
-    pass

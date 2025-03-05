@@ -67,6 +67,23 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+
+class Deadline(models.Model):
+    task = models.ForeignKey(Task, related_name='deadlines', on_delete=models.CASCADE)
+    due_date = models.DateTimeField()
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(CustomUser, related_name='deadlines', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = "Deadline"
+        verbose_name_plural = "Deadlines"
+
+    def __str__(self):
+        return f"Deadline for {self.task}"
+
+
 class Label(models.Model):
     name = models.CharField(max_length=50)
     color = models.CharField(max_length=7, null=True, blank=True)
