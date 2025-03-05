@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Task{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Update Task: {{ task.title }}</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white text-center">Edit Task</div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary w-100">Update Task</button>
+                    </form>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary w-100 mt-2">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

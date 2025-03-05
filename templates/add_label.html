@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Label{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Add a New Label</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-dark text-white text-center">New Label</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-dark w-100">Add Label</button>
+                    </form>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary w-100 mt-2">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

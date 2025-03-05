@@ -2,20 +2,16 @@ from django.db import models
 from auth_app.models import CustomUser
 
 class Task(models.Model):
-    access = models.CharField(
-        max_length=255, 
-        blank=True, 
-        help_text="Comma-separated UIDs of friends with access to the task"
-    )
-    attachment = models.FileField(upload_to='attachments/', null=True, blank=True, help_text="Attach a file")
-    completed = models.BooleanField(default=False, help_text="Mark as completed")
+    access = models.ManyToManyField(CustomUser, related_name='shared_tasks')
+    attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
+    completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    deadline = models.DateTimeField(help_text="Enter the task deadline")
-    description = models.TextField(help_text="Enter the task description")
-    stage = models.PositiveIntegerField(default=0, help_text="Enter the task stage")
-    title = models.CharField(max_length=100, help_text="Enter the task title")
+    deadline = models.DateTimeField()
+    description = models.TextField()
+    stage = models.PositiveIntegerField(default=0)
+    title = models.CharField(max_length=100)
     updated_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(CustomUser, related_name='tasks', on_delete=models.CASCADE, help_text="Task owner")
+    user = models.ForeignKey(CustomUser, related_name='tasks', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Task"
@@ -24,40 +20,13 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
-    def get_access_uids(self):
-        if self.access:
-            return [uid.strip() for uid in self.access.split(',') if uid.strip()]
-        return []
-
-    def set_access_uids(self, uid_list):
-        self.access = ','.join([str(uid) for uid in uid_list if uid])
-
-    def add_friend_access(self, friend_uid):
-        current_uids = self.get_access_uids()
-        if str(friend_uid) not in current_uids:
-            current_uids.append(str(friend_uid))
-            self.set_access_uids(current_uids)
-            return True
-        return False
-
-    def remove_friend_access(self, friend_uid):
-        current_uids = self.get_access_uids()
-        if str(friend_uid) in current_uids:
-            current_uids.remove(str(friend_uid))
-            self.set_access_uids(current_uids)
-            return True
-        return False
-
-    def has_access(self, user):
-        return user == self.user or str(user.uid) in self.get_access_uids()
-
 class Comment(models.Model):
-    attachment = models.FileField(upload_to='attachments/', null=True, blank=True, help_text="Attach a file")
+    attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    task = models.ForeignKey(Task, related_name='comments', on_delete=models.CASCADE, help_text="Related task")
-    text = models.TextField(help_text="Enter the comment text")
+    task = models.ForeignKey(Task, related_name='comments', on_delete=models.CASCADE)
+    text = models.TextField()
     updated_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(CustomUser, related_name='comments', on_delete=models.CASCADE, help_text="Comment author")
+    user = models.ForeignKey(CustomUser, related_name='comments', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Comment"
@@ -67,12 +36,13 @@ class Comment(models.Model):
         return self.text
 
 class Issue(models.Model):
-    attachment = models.FileField(upload_to='attachments/', null=True, blank=True, help_text="Attach a file")
+    attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    task = models.ForeignKey(Task, related_name='issues', on_delete=models.CASCADE, help_text="Related task")
-    text = models.TextField(help_text="Enter the issue description")
+    task = models.ForeignKey(Task, related_name='issues', on_delete=models.CASCADE)
+    text = models.TextField()
     updated_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(CustomUser, related_name='issues', on_delete=models.CASCADE, help_text="Issue reporter")
+    user = models.ForeignKey(CustomUser, related_name='issues', on_delete=models.CASCADE)
+    closed = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "Issue"
@@ -82,13 +52,13 @@ class Issue(models.Model):
         return self.text
 
 class Project(models.Model):
-    name = models.CharField(max_length=100, help_text="Enter the project name")
-    description = models.TextField(help_text="Enter the project description", null=True, blank=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(CustomUser, related_name='projects', on_delete=models.CASCADE, help_text="Project owner")
-    members = models.ManyToManyField(CustomUser, related_name='project_members', help_text="Project members")
-    tasks = models.ManyToManyField(Task, related_name='projects', help_text="Tasks in this project")
+    owner = models.ForeignKey(CustomUser, related_name='projects', on_delete=models.CASCADE)
+    members = models.ManyToManyField(CustomUser, related_name='project_members')
+    tasks = models.ManyToManyField(Task, related_name='projects')
 
     class Meta:
         verbose_name = "Project"
@@ -97,10 +67,27 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+
+class Deadline(models.Model):
+    task = models.ForeignKey(Task, related_name='deadlines', on_delete=models.CASCADE)
+    due_date = models.DateTimeField()
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(CustomUser, related_name='deadlines', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = "Deadline"
+        verbose_name_plural = "Deadlines"
+
+    def __str__(self):
+        return f"Deadline for {self.task}"
+
+
 class Label(models.Model):
-    name = models.CharField(max_length=50, help_text="Enter the label name")
-    color = models.CharField(max_length=7, help_text="Enter the label color in HEX format", null=True, blank=True)
-    tasks = models.ManyToManyField(Task, related_name='labels', help_text="Tasks with this label")
+    name = models.CharField(max_length=50)
+    color = models.CharField(max_length=7, null=True, blank=True)
+    tasks = models.ManyToManyField(Task, related_name='labels')
 
     class Meta:
         verbose_name = "Label"
@@ -110,10 +97,10 @@ class Label(models.Model):
         return self.name
 
 class Notification(models.Model):
-    user = models.ForeignKey(CustomUser, related_name='notifications', on_delete=models.CASCADE, help_text="Notification recipient")
-    task = models.ForeignKey(Task, related_name='notifications', on_delete=models.CASCADE, help_text="Related task")
-    message = models.TextField(help_text="Notification message")
-    read = models.BooleanField(default=False, help_text="Mark as read")
+    user = models.ForeignKey(CustomUser, related_name='notifications', on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, related_name='notifications', on_delete=models.CASCADE)
+    message = models.TextField()
+    read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -122,41 +109,3 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user} about {self.task}"
-
-class Deadline(models.Model):
-    title = models.CharField(max_length=100, help_text="Enter the deadline title")
-    due_date = models.DateTimeField(help_text="Enter the deadline due date")
-    is_completed = models.BooleanField(default=False, help_text="Mark as completed")
-    task = models.ForeignKey(
-        Task, 
-        related_name='deadlines', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        help_text="Related task (optional)"
-    )
-    owner = models.ForeignKey(
-        CustomUser, 
-        related_name='deadlines', 
-        on_delete=models.CASCADE, 
-        help_text="Deadline owner"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    description = models.TextField(
-        null=True, 
-        blank=True, 
-        help_text="Enter the deadline description (optional)"
-    )
-
-    class Meta:
-        verbose_name = "Deadline"
-        verbose_name_plural = "Deadlines"
-        ordering = ['due_date'] 
-
-    def __str__(self):
-        return f"{self.title} (Due: {self.due_date})"
-
-    def is_overdue(self):
-        from django.utils import timezone
-        return not self.is_completed and self.due_date < timezone.now()
