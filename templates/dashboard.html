@@ -1,21 +1,19 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-    <aside>
-        <h2>Sidebar</h2>
-        <ul>
-            <li><a href="{% url 'create_task' %}">Create Task</a></li>
-            <li><a href="{% url 'create_project' %}">Create Project</a></li>
-            <li><a href="{% url 'add_comment' %}">Add Comment</a></li>
-            <li><a href="{% url 'add_issue' %}">Add Issue</a></li>
-            <li><a href="{% url 'add_label' %}">Add Label</a></li>
-        </ul>
-    </aside>
-    <!-- Здесь можно добавить дополнительный контент дашборда -->
-    <section>
-        <h2>Dashboard Content</h2>
-        <p>Welcome to your dashboard!</p>
-    </section>
-{% endblock %}
+<div class="container-fluid mt-5 d-flex">
+    {% include 'sidebar.html' %}
+    <div class="main-content flex-grow-1" style="margin-left: 70px;">
+        <h1 class="mb-4 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard
+        </h1>
+        {% include 'notifications.html' %}
+        {% include 'sections/tasks.html' %}
+        {% include 'sections/projects.html' %}
+        {% include 'sections/comments.html' %}
+        {% include 'sections/issues.html' %}
+        {% include 'sections/labels.html' %}
+    </div>
+</div>
+{% endblock content %}

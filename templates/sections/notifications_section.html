@@ -1,0 +1,21 @@
+<div id="Notifications" class="section mb-5" style="display: none;">
+    <h3 class="mb-3 text-success text-center">Notifications</h3>
+    <div class="d-flex justify-content-center gap-4">
+        <div class="card task-card" style="width: 320px;">
+            <div class="card-header bg-success text-white text-center">Notifications List</div>
+            <div class="card-body notification-list task-list"
+                style="max-height: 350px; overflow-y: auto; padding: 15px;" data-type="notifications">
+                {% for notification in notifications %}
+                <div class="task-item" data-id="{{ notification.id }}"
+                    style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 5px;">{{ notification.message }}</p>
+                    <small class="text-success" style="font-size: 0.8rem;">{{ notification.created_at|date:"d.m.Y H:i"
+                        }}</small>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center" style="font-size: 0.9rem;">No notifications available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
