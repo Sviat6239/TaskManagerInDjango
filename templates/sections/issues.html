@@ -1,13 +1,12 @@
-<div id="issues-section" class="section mb-5" style="display: none;">
-    <h3 class="mb-3 text-danger text-center">Issues</h3>
+<div id="{{ section_id }}" class="section mb-5"
+    style="{% if active_section == section_id %}display: block;{% else %}display: none;{% endif %}">
     <div class="d-flex justify-content-center gap-4">
         <div class="card task-card" style="width: 320px;">
             <div class="card-header bg-danger text-white text-center">
                 Issues List
                 <a href="{% url 'add_issue' %}" class="btn btn-sm btn-light ms-2">Add Issue</a>
             </div>
-            <div class="card-body issue-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;"
-                data-type="issue">
+            <div class="card-body issue-list task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
                 {% for issue in issues %}
                 <div class="task-item" data-id="{{ issue.id }}"
                     style="border: 1px solid; padding: 8px; margin-bottom: 8px; border-radius: 5px;">
