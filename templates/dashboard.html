@@ -8,7 +8,8 @@
     <div class="main-content flex-grow-1" style="margin-left: 70px;">
         <h1 class="mb-4 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard
         </h1>
-        {% include 'notifications.html' with notifications=notifications invitations=invitations %}
+        {% include 'notifications.html' with notifications=notifications sent_invitations=sent_invitations
+        received_invitations=received_invitations %}
         {% include 'sections/tasks.html' %}
         {% include 'sections/projects.html' %}
         {% include 'sections/comments.html' %}

@@ -14,12 +14,6 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
-
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
@@ -40,10 +34,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Invitation(models.Model):
+    INVITATION_TYPES = (
+        ('registration', 'Registration'),
+        ('friendship', 'Friendship'),
+    )
     sender = models.ForeignKey(CustomUser, related_name='sent_invitations', on_delete=models.CASCADE)
     recipient_email = models.EmailField()
+    invitation_type = models.CharField(max_length=20, choices=INVITATION_TYPES, default='registration')
     created_at = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Invite from {self.sender} to {self.recipient_email}"
+        return f"{self.invitation_type} invite from {self.sender} to {self.recipient_email}"

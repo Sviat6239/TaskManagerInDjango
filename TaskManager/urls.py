@@ -6,9 +6,9 @@ from taskapp.views import (
     update_comment, delete_comment, add_issue, update_issue, delete_issue,
     close_issue, add_label, update_label, delete_label, create_invitation,
     accept_invitation, share_profile, view_profile, add_friend, remove_friend,
-    friends_list
+    friends_list, accept_friend_invitation
 )
-from auth_app import views
+from auth_app.views import login_view, register, logout_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -41,7 +41,8 @@ urlpatterns = [
     path('remove-friend/<int:user_id>/', remove_friend, name='remove_friend'),
     path('friends/', friends_list, name='friends_list'),
     path('friends/<int:user_id>/', friends_list, name='friends_list_other'),
-    path('login/', views.login_view, name='login'),
-    path('register/', views.register, name='register'),
-    path('logout/', views.logout_view, name='logout'),
+    path('login/', login_view, name='login'),
+    path('register/', register, name='register'),
+    path('logout/', logout_view, name='logout'),
+    path('accept-friend/<int:invitation_id>/', accept_friend_invitation, name='accept_friend_invitation')
 ]
