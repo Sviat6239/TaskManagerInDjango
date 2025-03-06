@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.email }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>{{ profile_user.email }}'s Profile</h2>
+    <p><strong>First Name:</strong> {{ profile_user.first_name }}</p>
+    <p><strong>Last Name:</strong> {{ profile_user.last_name }}</p>
+    <p><strong>Friends:</strong> {{ friends_count }}</p>
+    {% if request.user.is_authenticated and profile_user != request.user %}
+    {% if is_friend %}
+    <a href="{% url 'remove_friend' profile_user.id %}" class="btn btn-danger">Remove Friend</a>
+    {% else %}
+    <a href="{% url 'add_friend' profile_user.id %}" class="btn btn-success">Add Friend</a>
+    {% endif %}
+    {% endif %}
+    <a href="{% url 'friends_list_other' profile_user.id %}" class="btn btn-info mt-2">View Friends</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary mt-2">Back to Dashboard</a>
+</div>
+{% endblock %}

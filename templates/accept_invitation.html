@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Accept Invitation{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Accept Invitation</h2>
+    <p>You were invited by {{ invitation.sender.email }}</p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Join Tasker</button>
+    </form>
+</div>
+{% endblock %}

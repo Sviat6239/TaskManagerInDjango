@@ -8,27 +8,12 @@
     <div class="main-content flex-grow-1" style="margin-left: 70px;">
         <h1 class="mb-4 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard
         </h1>
-        {% include 'notifications.html' %}
-        <div id="tasks-section" class="section mb-5"
-            style="{% if active_section == 'tasks-section' %}display: block;{% else %}display: none;{% endif %}">
-            {% include 'sections/tasks.html' %}
-        </div>
-        <div id="projects-section" class="section mb-5"
-            style="{% if active_section == 'projects-section' %}display: block;{% else %}display: none;{% endif %}">
-            {% include 'sections/projects.html' %}
-        </div>
-        <div id="comments-section" class="section mb-5"
-            style="{% if active_section == 'comments-section' %}display: block;{% else %}display: none;{% endif %}">
-            {% include 'sections/comments.html' %}
-        </div>
-        <div id="issues-section" class="section mb-5"
-            style="{% if active_section == 'issues-section' %}display: block;{% else %}display: none;{% endif %}">
-            {% include 'sections/issues.html' %}
-        </div>
-        <div id="labels-section" class="section mb-5"
-            style="{% if active_section == 'labels-section' %}display: block;{% else %}display: none;{% endif %}">
-            {% include 'sections/labels.html' %}
-        </div>
+        {% include 'notifications.html' with notifications=notifications invitations=invitations %}
+        {% include 'sections/tasks.html' %}
+        {% include 'sections/projects.html' %}
+        {% include 'sections/comments.html' %}
+        {% include 'sections/issues.html' %}
+        {% include 'sections/labels.html' %}
     </div>
 </div>
 {% endblock content %}

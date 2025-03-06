@@ -3,11 +3,15 @@
         style="background: #2c3e50; border-radius: 15px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); height: fit-content;">
         <div class="card-header bg-dark text-white text-center" style="border-radius: 15px 15px 0 0;">Menu</div>
         <div class="card-body d-flex flex-column gap-2 p-3">
-            <a href="{% url 'dashboard' %}?section=tasks-section" class="btn btn-primary w-100">Tasks</a>
-            <a href="{% url 'dashboard' %}?section=projects-section" class="btn btn-success w-100">Projects</a>
-            <a href="{% url 'dashboard' %}?section=comments-section" class="btn btn-info w-100">Comments</a>
-            <a href="{% url 'dashboard' %}?section=issues-section" class="btn btn-danger w-100">Issues</a>
-            <a href="{% url 'dashboard' %}?section=labels-section" class="btn btn-dark w-100">Labels</a>
+            <button class="btn btn-primary w-100" data-section="tasks-section">Tasks</button>
+            <button class="btn btn-success w-100" data-section="projects-section">Projects</button>
+            <button class="btn btn-info w-100" data-section="comments-section">Comments</button>
+            <button class="btn btn-danger w-100" data-section="issues-section">Issues</button>
+            <button class="btn btn-dark w-100" data-section="labels-section">Labels</button>
+            <a href="{% url 'view_profile' request.user.id %}" class="btn btn-warning w-100">My Profile</a>
+            <a href="{% url 'share_profile' %}" class="btn btn-secondary w-100">Share Profile</a>
+            <a href="{% url 'friends_list' %}" class="btn btn-light w-100">My Friends</a>
+            <a href="{% url 'create_invitation' %}" class="btn btn-primary w-100">Invite a Friend</a>
         </div>
     </div>
 </div>
