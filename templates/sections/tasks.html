@@ -1,13 +1,12 @@
-<div id="tasks-section" class="section mb-5" style="display: none;">
-    <h3 class="mb-3 text-primary text-center">Tasks</h3>
+<div id="{{ section_id }}" class="section mb-5"
+    style="{% if active_section == section_id %}display: block;{% else %}display: none;{% endif %}">
     <div class="d-flex justify-content-center gap-4">
         <div class="card task-card" style="width: 320px;">
             <div class="card-header bg-primary text-white text-center">
                 Tasks List
                 <a href="{% url 'create_task' %}" class="btn btn-sm btn-light ms-2">Create Task</a>
             </div>
-            <div class="card-body task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;"
-                data-type="task">
+            <div class="card-body task-list" style="max-height: 350px; overflow-y: auto; padding: 15px;">
                 {% for task in tasks %}
                 <div class="task-item {% if task.completed %}border-success{% else %}border-warning{% endif %}"
                     data-id="{{ task.id }}"

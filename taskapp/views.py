@@ -1,7 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.conf import settings
 from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm
-from .models import Task, Project, Comment, Issue, Label
+from .models import Task, Project, Comment, Issue, Label, Notification
+from auth_app.models import CustomUser, Invitation
+from auth_app.views import CustomUserCreationForm, login
 
 def index(request):
     return render(request, 'index.html')
@@ -18,13 +22,20 @@ def dashboard(request):
     projects = Project.objects.filter(owner=request.user)
     comments = Comment.objects.filter(user=request.user)
     issues = Issue.objects.filter(user=request.user)
-    labels = Label.objects.all() 
+    labels = Label.objects.filter(tasks__user=request.user).distinct()
+    notifications = Notification.objects.filter(user=request.user, read=False)
+    sent_invitations = Invitation.objects.filter(sender=request.user)
+    received_invitations = Invitation.objects.filter(recipient_email=request.user.email, is_used=False)
+    
     return render(request, 'dashboard.html', {
         'tasks': tasks,
         'projects': projects,
         'comments': comments,
         'issues': issues,
         'labels': labels,
+        'notifications': notifications,
+        'sent_invitations': sent_invitations,
+        'received_invitations': received_invitations,
     })
 
 @login_required
@@ -209,3 +220,93 @@ def delete_label(request, label_id):
         label.delete()
         return redirect('dashboard')
     return render(request, 'delete_label.html', {'label': label})
+
+@login_required
+def create_invitation(request):
+    if request.method == 'POST':
+        recipient_email = request.POST.get('email')
+        invitation_type = request.POST.get('invitation_type', 'registration')
+        if recipient_email:
+            invitation = Invitation.objects.create(
+                sender=request.user,
+                recipient_email=recipient_email,
+                invitation_type=invitation_type
+            )
+            invite_link = request.build_absolute_uri(f"/accept-invite/{invitation.id}/")
+            try:
+                send_mail(
+                    f'You’re Invited to Tasker {"as a Friend" if invitation_type == "friendship" else ""}!',
+                    f'Join Tasker using this link: {invite_link}',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [recipient_email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+                return render(request, 'create_invitation.html', {'error': 'Failed to send invitation.'})
+            return redirect('dashboard')
+    return render(request, 'create_invitation.html')
+
+
+@login_required
+def accept_friend_invitation(request, invitation_id):
+    invitation = get_object_or_404(Invitation, id=invitation_id, invitation_type='friendship', is_used=False)
+    if invitation.recipient_email != request.user.email:
+        return redirect('dashboard') 
+    
+    sender = invitation.sender
+    recipient = request.user
+    if sender not in recipient.friends.all():
+        recipient.friends.add(sender)
+
+    invitation.is_used = True
+    invitation.save()
+    
+    other_invitations = Invitation.objects.filter(
+        sender=sender,
+        recipient_email=recipient.email,
+        invitation_type='friendship',
+        is_used=False
+    )
+    for inv in other_invitations:
+        inv.is_used = True
+        inv.save()
+    
+    return redirect('dashboard')
+
+@login_required
+def share_profile(request):
+    profile_link = request.build_absolute_uri(f"/profile/{request.user.id}/")
+    return render(request, 'share_profile.html', {'profile_link': profile_link})
+
+def view_profile(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    is_friend = request.user.is_authenticated and user in request.user.friends.all()
+    return render(request, 'view_profile.html', {
+        'profile_user': user,
+        'is_friend': is_friend,
+        'friends_count': user.friends.count(),
+    })
+
+@login_required
+def add_friend(request, user_id):
+    friend = get_object_or_404(CustomUser, id=user_id)
+    if friend != request.user and friend not in request.user.friends.all():
+        request.user.friends.add(friend)
+    return redirect('view_profile', user_id=user_id)
+
+@login_required
+def remove_friend(request, user_id):
+    friend = get_object_or_404(CustomUser, id=user_id)
+    if friend in request.user.friends.all():
+        request.user.friends.remove(friend)
+    return redirect('view_profile', user_id=user_id)
+
+@login_required
+def friends_list(request, user_id=None):
+    if user_id:
+        user = get_object_or_404(CustomUser, id=user_id)
+    else:
+        user = request.user
+    friends = user.friends.all()
+    return render(request, 'friends_list.html', {'profile_user': user, 'friends': friends})

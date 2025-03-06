@@ -1,13 +1,11 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-import uuid  
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
-        extra_fields.setdefault('uid', str(uuid.uuid4()))
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -16,17 +14,10 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
-
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
-    uid = models.CharField(max_length=36, unique=True, editable=False, default=uuid.uuid4)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
     friends = models.ManyToManyField('self', blank=True, symmetrical=True)
@@ -42,17 +33,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-    def add_friend(self, friend):
-        if friend != self and friend not in self.friends.all():
-            self.friends.add(friend)
-            return True
-        return False
+class Invitation(models.Model):
+    INVITATION_TYPES = (
+        ('registration', 'Registration'),
+        ('friendship', 'Friendship'),
+    )
+    sender = models.ForeignKey(CustomUser, related_name='sent_invitations', on_delete=models.CASCADE)
+    recipient_email = models.EmailField()
+    invitation_type = models.CharField(max_length=20, choices=INVITATION_TYPES, default='registration')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
 
-    def remove_friend(self, friend):
-        if friend in self.friends.all():
-            self.friends.remove(friend)
-            return True
-        return False
-
-    def get_friends_count(self):
-        return self.friends.count()
+    def __str__(self):
+        return f"{self.invitation_type} invite from {self.sender} to {self.recipient_email}"
