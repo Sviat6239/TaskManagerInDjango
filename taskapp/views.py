@@ -153,19 +153,28 @@ def delete_project(request, project_id):
 @login_required
 def add_comment(request):
     if request.method == 'POST':
-        form = CommentForm(request.POST, request.FILES)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.user = request.user
-            comment.save()
-            return redirect('dashboard')
-    else:
-        form = CommentForm()
-    return render(request, 'add_comment.html', {'form': form})
+        text = request.POST.get('text')
+        parent_id = request.POST.get('parent')
+        task_id = request.POST.get('task')
+
+        if not text or not text.strip():
+            return render(request, 'add_comment.html', {'error': 'Comment text cannot be empty'})
+
+        parent = Comment.objects.get(id=parent_id) if parent_id else None
+        task = Task.objects.get(id=task_id) if task_id else None
+
+        comment = Comment.objects.create(
+            user=request.user,
+            text=text,
+            task=task,
+            parent=parent
+        )
+        return redirect('dashboard')
+    return render(request, 'add_comment.html', {})
 
 @login_required
 def update_comment(request, comment_id):
-    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+    comment = Comment.objects.get(id=comment_id, user=request.user)
     if request.method == 'POST':
         form = CommentForm(request.POST, request.FILES, instance=comment)
         if form.is_valid():
@@ -345,3 +354,28 @@ def friends_list(request, user_id=None):
         user = request.user
     friends = user.friends.all()
     return render(request, 'friends_list.html', {'profile_user': user, 'friends': friends})
+
+@login_required
+def task_detail(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    return render(request, 'task_detail.html', {'task': task})
+
+@login_required
+def project_detail(request, project_id):
+    project = get_object_or_404(Project, id=project_id, owner=request.user)
+    return render(request, 'project_detail.html', {'project': project})
+
+@login_required
+def comment_detail(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+    return render(request, 'comment_detail.html', {'comment': comment})
+
+@login_required
+def issue_detail(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id, user=request.user)
+    return render(request, 'issue_detail.html', {'issue': issue})
+
+@login_required
+def label_detail(request, label_id):
+    label = get_object_or_404(Label, id=label_id, tasks__user=request.user)
+    return render(request, 'label_detail.html', {'label': label})
