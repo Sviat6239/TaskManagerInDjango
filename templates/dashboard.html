@@ -1,20 +1,226 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Tasker - Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-5 d-flex">
-    {% include 'sidebar.html' %}
-    <div class="main-content flex-grow-1" style="margin-left: 70px;">
-        <h1 class="mb-4 text-center" style="color: #2c3e50; font-weight: 700; font-size: 2.5rem;">Task Manager Dashboard
-        </h1>
-        {% include 'notifications.html' with notifications=notifications sent_invitations=sent_invitations
-        received_invitations=received_invitations %}
-        {% include 'sections/tasks.html' %}
-        {% include 'sections/projects.html' %}
-        {% include 'sections/comments.html' %}
-        {% include 'sections/issues.html' %}
-        {% include 'sections/labels.html' %}
+<div class="container mt-5">
+    <h1 style="text-align: center; margin-bottom: 30px;">Tasker Dashboard</h1>
+    <div class="dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+
+        <!-- Tasks Section -->
+        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+            <h3 style="margin: 0 0 15px; color: #333;">Tasks</h3>
+            <a href="{% url 'create_task' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Create Task</a>
+            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+                {% for task in tasks %}
+                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ task.title }} {% if task.project_set.exists %} (in {{ task.project_set.first.name }}){% endif %}</span>
+                    <div>
+                        <a href="{% url 'update_task' task.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'delete_task' task.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                    </div>
+                </li>
+                {% empty %}
+                <li style="margin: 10px 0;">No tasks yet.</li>
+                {% endfor %}
+            </ul>
+            {% if tasks|length > 6 %}
+            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
+            {% endif %}
+        </div>
+
+        <!-- Projects Section -->
+        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+            <h3 style="margin: 0 0 15px; color: #333;">Projects</h3>
+            <button id="createProjectBtn" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px; border: none; cursor: pointer;">Create Project</button>
+
+            <!-- Project Creation Form (Hidden by default) -->
+            <form id="projectForm" method="POST" action="{% url 'create_project' %}" style="display: none; margin-bottom: 15px;" class="project-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="projectName">Project Name:</label>
+                    <input type="text" id="projectName" name="name" class="form-control" required placeholder="Enter project name">
+                </div>
+                <div class="form-group">
+                    <label for="projectDescription">Description:</label>
+                    <textarea id="projectDescription" name="description" class="form-control" rows="2" placeholder="Optional description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Existing Tasks:</label>
+                    {% for task in tasks %}
+                    <div>
+                        <input type="checkbox" name="tasks" value="{{ task.id }}" id="task_{{ task.id }}">
+                        <label for="task_{{ task.id }}">{{ task.title }}</label>
+                    </div>
+                    {% empty %}
+                    <p>No tasks available to assign.</p>
+                    {% endfor %}
+                </div>
+                <div class="form-group" id="newTasksContainer">
+                    <label>New Tasks:</label>
+                    <div class="new-task">
+                        <input type="text" name="new_tasks[]" class="form-control" placeholder="New Task Title">
+                    </div>
+                </div>
+                <button type="button" id="addTaskBtn" style="padding: 5px 10px; background-color: #28a745; color: #fff; border: none; border-radius: 3px; margin-top: 5px;">Add Another Task</button>
+                <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; margin-top: 10px;">Save Project</button>
+            </form>
+
+            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+                {% for project in projects %}
+                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ project.name }} (Tasks: {% for task in project.tasks.all %}{{ task.title }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %})</span>
+                    <div>
+                        <a href="{% url 'update_project' project.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'delete_project' project.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                    </div>
+                </li>
+                {% empty %}
+                <li style="margin: 10px 0;">No projects yet.</li>
+                {% endfor %}
+            </ul>
+            {% if projects|length > 6 %}
+            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
+            {% endif %}
+        </div>
+
+        <!-- Comments Section -->
+        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+            <h3 style="margin: 0 0 15px; color: #333;">Comments</h3>
+            <a href="{% url 'add_comment' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Comment</a>
+            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+                {% for comment in comments %}
+                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ comment.text|truncatechars:20 }}</span>
+                    <div>
+                        <a href="{% url 'update_comment' comment.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'delete_comment' comment.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                    </div>
+                </li>
+                {% empty %}
+                <li style="margin: 10px 0;">No comments yet.</li>
+                {% endfor %}
+            </ul>
+            {% if comments|length > 6 %}
+            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
+            {% endif %}
+        </div>
+
+        <!-- Issues Section -->
+        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+            <h3 style="margin: 0 0 15px; color: #333;">Issues</h3>
+            <a href="{% url 'add_issue' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Issue</a>
+            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+                {% for issue in issues %}
+                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ issue.text|truncatechars:20 }} {% if issue.closed %}(Closed){% endif %}</span>
+                    <div>
+                        <a href="{% url 'update_issue' issue.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'delete_issue' issue.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Delete</a>
+                        <a href="{% url 'close_issue' issue.id %}" style="padding: 5px 10px; background-color: #ffc107; color: #fff; text-decoration: none; border-radius: 3px;">{% if issue.closed %}Reopen{% else %}Close{% endif %}</a>
+                    </div>
+                </li>
+                {% empty %}
+                <li style="margin: 10px 0;">No issues yet.</li>
+                {% endfor %}
+            </ul>
+            {% if issues|length > 6 %}
+            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
+            {% endif %}
+        </div>
+
+        <!-- Labels Section -->
+        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+            <h3 style="margin: 0 0 15px; color: #333;">Labels</h3>
+            <a href="{% url 'add_label' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Label</a>
+            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+                {% for label in labels %}
+                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="background-color: {{ label.color }}; padding: 2px 8px; border-radius: 3px; color: #fff;">{{ label.name }}</span>
+                    <div>
+                        <a href="{% url 'update_label' label.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'delete_label' label.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                    </div>
+                </li>
+                {% empty %}
+                <li style="margin: 10px 0;">No labels yet.</li>
+                {% endfor %}
+            </ul>
+            {% if labels|length > 6 %}
+            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
+            {% endif %}
+        </div>
     </div>
 </div>
-{% endblock content %}
+
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .card a:hover {
+        opacity: 0.8;
+    }
+    .item-list.expanded {
+        max-height: none;
+    }
+    .show-more.hidden {
+        display: none;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .new-task {
+        margin-bottom: 10px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const backToTop = document.getElementById('back-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTop.style.display = 'block';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+
+        // Show More functionality
+        document.querySelectorAll('.show-more').forEach(button => {
+            button.addEventListener('click', () => {
+                const list = button.previousElementSibling;
+                list.classList.toggle('expanded');
+                if (list.classList.contains('expanded')) {
+                    button.textContent = 'Show Less';
+                } else {
+                    button.textContent = 'Show More';
+                }
+            });
+        });
+
+        // Toggle Project Form
+        const createProjectBtn = document.getElementById('createProjectBtn');
+        const projectForm = document.getElementById('projectForm');
+        createProjectBtn.addEventListener('click', () => {
+            projectForm.style.display = projectForm.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Add New Task Input
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const newTasksContainer = document.getElementById('newTasksContainer');
+        addTaskBtn.addEventListener('click', () => {
+            const newTaskDiv = document.createElement('div');
+            newTaskDiv.className = 'new-task';
+            newTaskDiv.innerHTML = '<input type="text" name="new_tasks[]" class="form-control" placeholder="New Task Title">';
+            newTasksContainer.appendChild(newTaskDiv);
+        });
+    });
+</script>
+{% endblock %}
