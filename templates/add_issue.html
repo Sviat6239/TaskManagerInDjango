@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Add Issue - Tasker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Add Issue</h1>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: #fff; border: none; border-radius: 5px;">Submit</button>
+    </form>
+</div>
+{% endblock %}

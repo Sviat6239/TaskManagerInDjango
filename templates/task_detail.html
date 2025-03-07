@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}{{ task.title }} - Tasker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>{{ task.title }}</h1>
+    <p><strong>Description:</strong> {{ task.description }}</p>
+    <p><strong>Deadline:</strong> {{ task.deadline }}</p>
+    <p><strong>Completed:</strong> {{ task.completed|yesno }}</p>
+    <a href="{% url 'update_task' task.id %}" style="padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 5px;">Edit</a>
+    <a href="{% url 'dashboard' %}" style="padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Comment - Tasker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Comment</h1>
+    <p><strong>Text:</strong> {{ comment.text }}</p>
+    <p><strong>Task:</strong> {{ comment.task.title|default:"No task" }}</p>
+    <p><strong>Replies:</strong> 
+        {% for reply in comment.replies.all %}
+            {{ reply.text }}<br>
+        {% empty %}
+            None
+        {% endfor %}
+    </p>
+    <a href="{% url 'update_comment' comment.id %}" style="padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 5px;">Edit</a>
+    <a href="{% url 'dashboard' %}" style="padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+</div>
+{% endblock %}

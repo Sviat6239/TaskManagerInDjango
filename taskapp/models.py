@@ -23,17 +23,18 @@ class Task(models.Model):
 class Comment(models.Model):
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    task = models.ForeignKey(Task, related_name='comments', on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, related_name='comments', on_delete=models.CASCADE, null=True, blank=True)
     text = models.TextField()
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(CustomUser, related_name='comments', on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Comment"
         verbose_name_plural = "Comments"
 
     def __str__(self):
-        return self.text
+        return self.text[:50]
 
 class Issue(models.Model):
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True)

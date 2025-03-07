@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}{{ issue.text|truncatechars:20 }} - Tasker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>{{ issue.text }}</h1>
+    <p><strong>Task:</strong> {{ issue.task.title }}</p>
+    <p><strong>Status:</strong> {% if issue.closed %}Closed{% else %}Open{% endif %}</p>
+    <p><strong>Created:</strong> {{ issue.created_at }}</p>
+    <a href="{% url 'update_issue' issue.id %}" style="padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 5px;">Edit</a>
+    <a href="{% url 'close_issue' issue.id %}" style="padding: 10px 20px; background-color: #ffc107; color: #fff; text-decoration: none; border-radius: 5px;">{% if issue.closed %}Reopen{% else %}Close{% endif %}</a>
+    <a href="{% url 'dashboard' %}" style="padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+</div>
+{% endblock %}

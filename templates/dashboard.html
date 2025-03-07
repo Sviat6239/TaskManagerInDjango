@@ -15,9 +15,12 @@
             <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
                 {% for task in tasks %}
                 <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <span>{{ task.title }} {% if task.project_set.exists %} (in {{ task.project_set.first.name }}){% endif %}</span>
+                    <a href="{% url 'task_detail' task.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                        {{ task.title }} {% if task.project_set.exists %} (in {{ task.project_set.first.name }}){% endif %}
+                    </a>
                     <div>
-                        <a href="{% url 'update_task' task.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'update_task' task.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none;ACM
+ border-radius: 3px; margin-right: 5px;">Edit</a>
                         <a href="{% url 'delete_task' task.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
                     </div>
                 </li>
@@ -70,7 +73,9 @@
             <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
                 {% for project in projects %}
                 <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <span>{{ project.name }} (Tasks: {% for task in project.tasks.all %}{{ task.title }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %})</span>
+                    <a href="{% url 'project_detail' project.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                        {{ project.name }} (Tasks: {% for task in project.tasks.all %}{{ task.title }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %})
+                    </a>
                     <div>
                         <a href="{% url 'update_project' project.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
                         <a href="{% url 'delete_project' project.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
@@ -91,13 +96,48 @@
             <a href="{% url 'add_comment' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Comment</a>
             <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
                 {% for comment in comments %}
-                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <span>{{ comment.text|truncatechars:20 }}</span>
-                    <div>
-                        <a href="{% url 'update_comment' comment.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
-                        <a href="{% url 'delete_comment' comment.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                {% if not comment.parent %}
+                <li class="comment-item" style="margin: 10px 0;">
+                    <div class="comment-content" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+                        <a href="{% url 'comment_detail' comment.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                            {{ comment.text }}
+                        </a>
+                        <div>
+                            <button class="reply-btn" style="padding: 5px 10px; background-color: #17a2b8; color: #fff; border: none; border-radius: 3px; margin-right: 5px; cursor: pointer;">Reply</button>
+                            <a href="{% url 'update_comment' comment.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                            <a href="{% url 'delete_comment' comment.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                        </div>
                     </div>
+                    <!-- Reply Form (Hidden by default) -->
+                    <form class="reply-form" method="POST" action="{% url 'add_comment' %}" style="display: none; margin-top: 10px; padding-left: 20px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="parent" value="{{ comment.id }}">
+                        <textarea name="text" class="form-control" rows="2" placeholder="Write your reply..." required></textarea>
+                        <button type="submit" style="padding: 5px 10px; background-color: #007bff; color: #fff; border: none; border-radius: 3px; margin-top: 5px;">Submit Reply</button>
+                    </form>
+                    <!-- Nested Comments -->
+                    {% for reply in comment.replies.all %}
+                    <div class="comment-reply" style="padding-left: 40px; margin-top: 10px;">
+                        <div class="comment-content" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background-color: #e9ecef; border-radius: 5px;">
+                            <a href="{% url 'comment_detail' reply.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #e9ecef; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                                {{ reply.text }}
+                            </a>
+                            <div>
+                                <button class="reply-btn" style="padding: 5px 10px; background-color: #17a2b8; color: #fff; border: none; border-radius: 3px; margin-right: 5px; cursor: pointer;">Reply</button>
+                                <a href="{% url 'update_comment' reply.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                                <a href="{% url 'delete_comment' reply.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                            </div>
+                        </div>
+                        <form class="reply-form" method="POST" action="{% url 'add_comment' %}" style="display: none; margin-top: 10px; padding-left: 20px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="parent" value="{{ reply.id }}">
+                            <textarea name="text" class="form-control" rows="2" placeholder="Write your reply..." required></textarea>
+                            <button type="submit" style="padding: 5px 10px; background-color: #007bff; color: #fff; border: none; border-radius: 3px; margin-top: 5px;">Submit Reply</button>
+                        </form>
+                    </div>
+                    {% endfor %}
                 </li>
+                {% endif %}
                 {% empty %}
                 <li style="margin: 10px 0;">No comments yet.</li>
                 {% endfor %}
@@ -114,7 +154,9 @@
             <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
                 {% for issue in issues %}
                 <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <span>{{ issue.text|truncatechars:20 }} {% if issue.closed %}(Closed){% endif %}</span>
+                    <a href="{% url 'issue_detail' issue.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                        {{ issue.text|truncatechars:20 }} {% if issue.closed %}(Closed){% endif %}
+                    </a>
                     <div>
                         <a href="{% url 'update_issue' issue.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
                         <a href="{% url 'delete_issue' issue.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Delete</a>
@@ -137,7 +179,9 @@
             <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
                 {% for label in labels %}
                 <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="background-color: {{ label.color }}; padding: 2px 8px; border-radius: 3px; color: #fff;">{{ label.name }}</span>
+                    <a href="{% url 'label_detail' label.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: {{ label.color }}; color: #fff; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                        {{ label.name }}
+                    </a>
                     <div>
                         <a href="{% url 'update_label' label.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
                         <a href="{% url 'delete_label' label.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
@@ -158,7 +202,7 @@
     .card:hover {
         transform: translateY(-5px);
     }
-    .card a:hover {
+    .card a:hover, .reply-btn:hover, .item-button:hover {
         opacity: 0.8;
     }
     .item-list.expanded {
@@ -178,6 +222,21 @@
     }
     .new-task {
         margin-bottom: 10px;
+    }
+    .comment-item {
+        border-bottom: 1px solid #e9ecef;
+    }
+    .comment-content {
+        transition: background-color 0.3s ease;
+    }
+    .comment-content:hover {
+        background-color: #e2e6ea;
+    }
+    .comment-reply {
+        border-left: 2px solid #007bff;
+    }
+    .item-button {
+        transition: background-color 0.3s ease;
     }
 </style>
 
@@ -220,6 +279,14 @@
             newTaskDiv.className = 'new-task';
             newTaskDiv.innerHTML = '<input type="text" name="new_tasks[]" class="form-control" placeholder="New Task Title">';
             newTasksContainer.appendChild(newTaskDiv);
+        });
+
+        // Toggle Reply Form
+        document.querySelectorAll('.reply-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const replyForm = button.parentElement.nextElementSibling;
+                replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+            });
         });
     });
 </script>
