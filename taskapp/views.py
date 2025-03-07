@@ -5,6 +5,7 @@ from django.conf import settings
 from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm
 from .models import Task, Project, Comment, Issue, Label, Notification
 from auth_app.models import CustomUser, Invitation
+from datetime import datetime, timedelta
 from auth_app.views import CustomUserCreationForm, login
 
 def index(request):
@@ -26,7 +27,7 @@ def dashboard(request):
     notifications = Notification.objects.filter(user=request.user, read=False)
     sent_invitations = Invitation.objects.filter(sender=request.user)
     received_invitations = Invitation.objects.filter(recipient_email=request.user.email, is_used=False)
-    
+
     return render(request, 'dashboard.html', {
         'tasks': tasks,
         'projects': projects,
@@ -38,6 +39,7 @@ def dashboard(request):
         'received_invitations': received_invitations,
     })
 
+
 @login_required
 def create_task(request):
     if request.method == 'POST':
@@ -47,10 +49,26 @@ def create_task(request):
             task.user = request.user
             task.save()
             form.save_m2m()
+
+            project_id = request.POST.get('project_id')
+            if project_id:
+                from .models import Project
+                try:
+                    project = Project.objects.get(id=project_id, owner=request.user)
+                    project.tasks.add(task)
+                except Project.DoesNotExist:
+                    pass
+
             return redirect('dashboard')
     else:
-        form = TaskForm()
-    return render(request, 'create_task.html', {'form': form})
+        project_id = request.GET.get('project_id')
+        initial = {'project': project_id} if project_id else {}
+        form = TaskForm(initial=initial)
+
+    return render(request, 'create_task.html', {
+        'form': form,
+        'project_id': project_id if project_id else None
+    })
 
 @login_required
 def update_task(request, task_id):
@@ -84,16 +102,33 @@ def complete_task(request, task_id):
 @login_required
 def create_project(request):
     if request.method == 'POST':
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.owner = request.user
-            project.save()
-            form.save_m2m()
-            return redirect('dashboard')
-    else:
-        form = ProjectForm()
-    return render(request, 'create_project.html', {'form': form})
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        task_ids = request.POST.getlist('tasks')
+        new_tasks = request.POST.getlist('new_tasks[]')
+
+        project = Project.objects.create(
+            name=name,
+            description=description,
+            owner=request.user
+        )
+
+        if task_ids:
+            tasks = Task.objects.filter(id__in=task_ids, user=request.user)
+            project.tasks.set(tasks)
+
+        default_deadline = datetime.now() + timedelta(days=7)
+        for task_title in new_tasks:
+            if task_title.strip():
+                task = Task.objects.create(
+                    title=task_title,
+                    user=request.user,
+                    deadline=default_deadline
+                )
+                project.tasks.add(task)
+
+        return redirect('dashboard')
+    return redirect('dashboard')
 
 @login_required
 def update_project(request, project_id):
