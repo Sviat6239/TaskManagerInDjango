@@ -19,8 +19,7 @@
                         {{ task.title }} {% if task.project_set.exists %} (in {{ task.project_set.first.name }}){% endif %}
                     </a>
                     <div>
-                        <a href="{% url 'update_task' task.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none;ACM
- border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'update_task' task.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
                         <a href="{% url 'delete_task' task.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
                     </div>
                 </li>
@@ -31,13 +30,13 @@
             {% if tasks|length > 6 %}
             <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
             {% endif %}
+            <a href="{% url 'task_list' %}" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #17a2b8; color: #fff; text-decoration: none; border-radius: 5px; text-align: center;">View Full List</a>
         </div>
 
         <!-- Projects Section -->
         <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
             <h3 style="margin: 0 0 15px; color: #333;">Projects</h3>
             <button id="createProjectBtn" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px; border: none; cursor: pointer;">Create Project</button>
-
             <!-- Project Creation Form (Hidden by default) -->
             <form id="projectForm" method="POST" action="{% url 'create_project' %}" style="display: none; margin-bottom: 15px;" class="project-form">
                 {% csrf_token %}
@@ -69,7 +68,6 @@
                 <button type="button" id="addTaskBtn" style="padding: 5px 10px; background-color: #28a745; color: #fff; border: none; border-radius: 3px; margin-top: 5px;">Add Another Task</button>
                 <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; margin-top: 10px;">Save Project</button>
             </form>
-
             <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
                 {% for project in projects %}
                 <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
@@ -88,6 +86,7 @@
             {% if projects|length > 6 %}
             <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
             {% endif %}
+            <a href="{% url 'project_list' %}" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #17a2b8; color: #fff; text-decoration: none; border-radius: 5px; text-align: center;">View Full List</a>
         </div>
 
         <!-- Comments Section -->
@@ -145,6 +144,7 @@
             {% if comments|length > 6 %}
             <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
             {% endif %}
+            <a href="{% url 'comment_list' %}" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #17a2b8; color: #fff; text-decoration: none; border-radius: 5px; text-align: center;">View Full List</a>
         </div>
 
         <!-- Issues Section -->
@@ -170,6 +170,7 @@
             {% if issues|length > 6 %}
             <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
             {% endif %}
+            <a href="{% url 'issue_list' %}" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #17a2b8; color: #fff; text-decoration: none; border-radius: 5px; text-align: center;">View Full List</a>
         </div>
 
         <!-- Labels Section -->
@@ -194,6 +195,7 @@
             {% if labels|length > 6 %}
             <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
             {% endif %}
+            <a href="{% url 'label_list' %}" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #17a2b8; color: #fff; text-decoration: none; border-radius: 5px; text-align: center;">View Full List</a>
         </div>
     </div>
 </div>

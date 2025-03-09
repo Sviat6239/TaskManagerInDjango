@@ -379,3 +379,23 @@ def issue_detail(request, issue_id):
 def label_detail(request, label_id):
     label = get_object_or_404(Label, id=label_id, tasks__user=request.user)
     return render(request, 'label_detail.html', {'label': label})
+
+def task_list(request):
+    tasks = Task.objects.all()
+    return render(request, 'task_list.html', {'tasks': tasks})
+
+def project_list(request):
+    projects = Project.objects.all()
+    return render(request, 'project_list.html', {'projects': projects})
+
+def comment_list(request):
+    comments = Comment.objects.filter(parent__isnull=True)
+    return render(request, 'comment_list.html', {'comments': comments})
+
+def issue_list(request):
+    issues = Issue.objects.all()
+    return render(request, 'issue_list.html', {'issues': issues})
+
+def label_list(request):
+    labels = Label.objects.all()
+    return render(request, 'label_list.html', {'labels': labels})

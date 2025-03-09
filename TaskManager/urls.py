@@ -6,7 +6,8 @@ from taskapp.views import (
     update_comment, delete_comment, add_issue, update_issue, delete_issue,
     close_issue, add_label, update_label, delete_label, create_invitation,
     share_profile, view_profile, add_friend, remove_friend,
-    friends_list, accept_friend_invitation, task_detail, project_detail, comment_detail, issue_detail, label_detail
+    friends_list, accept_friend_invitation, task_detail, project_detail, comment_detail, issue_detail, label_detail,
+    task_list, project_list, comment_list, issue_list, label_list
 )
 from auth_app.views import login_view, register, logout_view
 
@@ -50,4 +51,10 @@ urlpatterns = [
     path('comment/<int:comment_id>/', comment_detail, name='comment_detail'),
     path('issue/<int:issue_id>/', issue_detail, name='issue_detail'),
     path('label/<int:label_id>/', label_detail, name='label_detail'),
+
+    path('tasks/', task_list, name='task_list'),
+    path('projects/', project_list, name='project_list'),
+    path('comments/', comment_list, name='comment_list'),
+    path('issues/', issue_list, name='issue_list'),
+    path('labels/', label_list, name='label_list'),
 ]
