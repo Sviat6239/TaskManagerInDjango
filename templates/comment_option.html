@@ -1,0 +1,6 @@
+<option value="{{ comment.id }}">{{ prefix }}{{ comment.text|truncatechars:20 }}</option>
+{% if comment.replies.exists %}
+    {% for reply in comment.replies.all %}
+        {% include 'comment_option.html' with comment=reply prefix=prefix|add:'↳ ' %}
+    {% endfor %}
+{% endif %}

@@ -3,11 +3,437 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h1>{{ task.title }}</h1>
-    <p><strong>Description:</strong> {{ task.description }}</p>
-    <p><strong>Deadline:</strong> {{ task.deadline }}</p>
-    <p><strong>Completed:</strong> {{ task.completed|yesno }}</p>
-    <a href="{% url 'update_task' task.id %}" style="padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 5px;">Edit</a>
-    <a href="{% url 'dashboard' %}" style="padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+    <h1>{{ task.title }} <button class="btn btn-info btn-sm" id="toggleTaskBtn">Collapse</button></h1>
+    <div id="taskDetails">
+        <p><strong>Description:</strong> {{ task.description }}</p>
+        <p><strong>Deadline:</strong> {{ task.deadline }}</p>
+        <p><strong>Completed:</strong> {{ task.completed|yesno }}</p>
+    </div>
+    <div class="action-buttons mt-3">
+        <a href="{% url 'update_task' task.id %}" class="btn btn-success">Edit</a>
+        <a href="{% url 'delete_task' task.id %}" class="btn btn-danger" id="deleteTaskBtn">Delete</a>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+
+    <!-- Comments Section -->
+    <h4 class="mt-4">Comments: <button class="btn btn-info btn-sm" id="toggleCommentsBtn">Collapse All</button></h4>
+    <ul class="comment-tree list-group mb-3" id="commentList">
+        {% for comment in task.comments.all|slice:":6" %}
+            {% include 'comment_tree.html' with comment=comment depth=0 %}
+        {% empty %}
+            <li class="list-group-item">No comments yet.</li>
+        {% endfor %}
+    </ul>
+    {% if task.comments.count > 6 %}
+        <button id="loadMoreBtn" class="btn btn-info mt-2">Load More</button>
+    {% endif %}
+
+    <!-- Add Comment Button -->
+    <button class="btn btn-info mt-2" id="addCommentBtn">Add Comment</button>
+
+    <!-- Comment Form (Hidden by default) -->
+    <div id="commentFormContainer" style="display: none; margin-top: 20px;">
+        <form id="commentForm" method="POST" class="task-form">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ task.id }}">
+            <div class="form-group">
+                <label for="parent_id">Reply to (optional):</label>
+                <select name="parent_id" id="parent_id" class="form-control">
+                    <option value="">-- No reply --</option>
+                    {% for comment in task.comments.all %}
+                        <option value="{{ comment.id }}">{{ comment.text|truncatechars:20 }}</option>
+                        {% for reply in comment.replies.all %}
+                            {% include 'comment_option.html' with comment=reply prefix='↳ ' %}
+                        {% endfor %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="commentText">Comment:</label>
+                <textarea id="commentText" name="text" class="form-control" rows="3" placeholder="Write your comment..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-success mt-2">Submit Comment</button>
+            <button type="button" class="btn btn-secondary mt-2" id="cancelComment">Cancel</button>
+        </form>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Task Details Toggle
+    const toggleTaskBtn = document.getElementById('toggleTaskBtn');
+    const taskDetails = document.getElementById('taskDetails');
+    let taskCollapsed = false;
+
+    toggleTaskBtn.addEventListener('click', () => {
+        if (!taskCollapsed) {
+            taskDetails.style.display = 'none';
+            toggleTaskBtn.textContent = 'Expand';
+            taskCollapsed = true;
+        } else {
+            taskDetails.style.display = 'block';
+            toggleTaskBtn.textContent = 'Collapse';
+            taskCollapsed = false;
+        }
+    });
+
+    // Delete Task Confirmation
+    const deleteTaskBtn = document.getElementById('deleteTaskBtn');
+    deleteTaskBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+            fetch("{% url 'delete_task' task.id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include'
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers.get('Content-Type'));
+                
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    window.location.href = "{% url 'dashboard' %}";
+                } else {
+                    alert('Error deleting task: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                alert('Error deleting task: ' + error.message);
+            });
+        }
+    });
+
+    // Comments Functionality
+    const addCommentBtn = document.getElementById('addCommentBtn');
+    const commentFormContainer = document.getElementById('commentFormContainer');
+    const commentForm = document.getElementById('commentForm');
+    const cancelCommentBtn = document.getElementById('cancelComment');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    let offset = 6;
+
+    // Show Comment Form
+    addCommentBtn.addEventListener('click', () => {
+        commentFormContainer.style.display = 'block';
+        commentForm.action = "{% url 'add_comment' %}";
+        document.getElementById('parent_id').value = '';
+    });
+
+    // Cancel Comment Form
+    cancelCommentBtn.addEventListener('click', () => {
+        commentFormContainer.style.display = 'none';
+        commentForm.reset();
+    });
+
+    // Submit Comment Form
+    commentForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        const formData = new FormData(commentForm);
+
+        fetch(commentForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                commentForm.reset();
+                commentFormContainer.style.display = 'none';
+                const commentList = document.getElementById('commentList');
+                const newComment = document.createElement('li');
+                newComment.className = 'list-group-item comment-item';
+                newComment.setAttribute('data-comment-id', data.comment.id);
+                newComment.innerHTML = `
+                    <div class="comment-block">
+                        <p>${data.comment.text}</p>
+                        <small>Added on: ${new Date(data.comment.created_at).toLocaleString()}</small>
+                        <small> by ${data.comment.author || 'Unknown'}</small>
+                        <button class="btn btn-info btn-sm reply-btn" data-comment-id="${data.comment.id}">Reply</button>
+                        <button class="btn btn-warning btn-sm edit-btn" data-comment-id="${data.comment.id}">Edit</button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-comment-id="${data.comment.id}">Delete</button>
+                    </div>
+                `;
+                if (data.comment.parent_id) {
+                    const parentComment = document.querySelector(`.comment-item[data-comment-id="${data.comment.parent_id}"]`);
+                    if (parentComment) {
+                        let replyList = parentComment.querySelector('ul');
+                        if (!replyList) {
+                            replyList = document.createElement('ul');
+                            replyList.className = 'list-group nested-comments';
+                            parentComment.appendChild(replyList);
+                        }
+                        replyList.appendChild(newComment);
+                    }
+                } else {
+                    commentList.insertBefore(newComment, commentList.firstChild);
+                }
+                updateParentOptions();
+                updateCommentButtons();
+            } else {
+                alert('Error adding comment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert('Error submitting comment: ' + error.message);
+        });
+    });
+
+    // Load More Comments
+    loadMoreBtn?.addEventListener('click', () => {
+        fetch(`{% url 'load_more_comments' %}?task_id={{ task.id }}&offset=${offset}&limit=6`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const commentList = document.getElementById('commentList');
+            data.comments.forEach(comment => {
+                const newComment = document.createElement('li');
+                newComment.className = 'list-group-item comment-item';
+                newComment.setAttribute('data-comment-id', comment.id);
+                newComment.innerHTML = `
+                    <div class="comment-block">
+                        <p>${comment.text}</p>
+                        <small>Added on: ${new Date(comment.created_at).toLocaleString()}</small>
+                        <small> by ${comment.author || 'Unknown'}</small>
+                        <button class="btn btn-info btn-sm reply-btn" data-comment-id="${comment.id}">Reply</button>
+                        <button class="btn btn-warning btn-sm edit-btn" data-comment-id="${comment.id}">Edit</button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-comment-id="${comment.id}">Delete</button>
+                    </div>
+                `;
+                commentList.appendChild(newComment);
+            });
+            offset += 6;
+            if (!data.has_more) {
+                loadMoreBtn.style.display = 'none';
+            }
+            updateCommentButtons();
+            updateParentOptions();
+        })
+        .catch(error => {
+            console.error('Load more error:', error);
+            alert('Error loading more comments: ' + error.message);
+        });
+    });
+
+    // Toggle Comments Collapse/Expand
+    const toggleCommentsBtn = document.getElementById('toggleCommentsBtn');
+    let commentsCollapsed = false;
+
+    toggleCommentsBtn.addEventListener('click', () => {
+        const nestedComments = document.querySelectorAll('.nested-comments');
+        const commentBlocks = document.querySelectorAll('.comment-block');
+        
+        if (!commentsCollapsed) {
+            nestedComments.forEach(nested => nested.style.display = 'none');
+            commentBlocks.forEach(block => block.style.display = 'none');
+            toggleCommentsBtn.textContent = 'Expand All';
+            commentsCollapsed = true;
+        } else {
+            nestedComments.forEach(nested => nested.style.display = 'block');
+            commentBlocks.forEach(block => block.style.display = 'flex');
+            toggleCommentsBtn.textContent = 'Collapse All';
+            commentsCollapsed = false;
+        }
+    });
+
+    // Update Comment Buttons Functionality
+    function updateCommentButtons() {
+        document.querySelectorAll('.reply-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                commentFormContainer.style.display = 'block';
+                commentForm.action = "{% url 'add_comment' %}";
+                document.getElementById('parent_id').value = button.getAttribute('data-comment-id');
+            });
+        });
+
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const commentId = button.getAttribute('data-comment-id');
+                const commentText = button.closest('.comment-item').querySelector('p').textContent;
+                commentFormContainer.style.display = 'block';
+                commentForm.action = "{% url 'update_comment' 0 %}".replace('0', commentId);
+                document.getElementById('commentText').value = commentText;
+                document.getElementById('parent_id').value = '';
+            });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete this comment?')) {
+                    const commentId = button.getAttribute('data-comment-id');
+                    fetch("{% url 'delete_comment' 0 %}".replace('0', commentId), {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            button.closest('.comment-item').remove();
+                            updateParentOptions();
+                        } else {
+                            alert('Error deleting comment: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Delete error:', error);
+                        alert('Error deleting comment: ' + error.message);
+                    });
+                }
+            });
+        });
+    }
+
+    // Update Parent Options
+    function updateParentOptions() {
+        fetch(`{% url 'load_comment_options' %}?task_id={{ task.id }}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const parentSelect = document.getElementById('parent_id');
+            parentSelect.innerHTML = '<option value="">-- No reply --</option>';
+            data.options.forEach(option => {
+                parentSelect.innerHTML += option;
+            });
+        })
+        .catch(error => console.error('Error updating options:', error));
+    }
+
+    // Initial button setup
+    updateCommentButtons();
+});
+</script>
+
+<style>
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    color: #fff;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.btn-success { background-color: #28a745; }
+.btn-primary { background-color: #007bff; }
+.btn-info { background-color: #17a2b8; }
+.btn-warning { background-color: #ffc107; }
+.btn-danger { background-color: #dc3545; }
+.btn-secondary { background-color: #6c757d; }
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.list-group-item {
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    padding: 10px;
+}
+
+.comment-item {
+    position: relative;
+}
+
+.comment-block {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.reply-btn, .edit-btn, .delete-btn {
+    margin-top: 5px;
+    align-self: flex-start;
+    margin-right: 5px;
+}
+
+.nested-comments {
+    margin-left: 20px;
+    margin-top: 10px;
+}
+
+.nested-comments .list-group-item {
+    background-color: #fff;
+    border-left: 2px solid #17a2b8;
+}
+
+#toggleTaskBtn, #toggleCommentsBtn {
+    margin-left: 10px;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+#taskDetails {
+    margin-bottom: 15px;
+}
+
+.comment-block.collapsed {
+    display: none;
+}
+
+.nested-comments.collapsed {
+    display: none;
+}
+</style>
 {% endblock %}

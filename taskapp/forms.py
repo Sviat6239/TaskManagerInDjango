@@ -29,7 +29,7 @@ class ProjectForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
             'members': forms.SelectMultiple(attrs={'class': 'form-control'}),
-            'tasks': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'tasks': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -74,6 +74,8 @@ class LabelForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control'}),
             'tasks': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'projects': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'deadline': forms.DateTimeInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):

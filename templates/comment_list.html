@@ -7,7 +7,6 @@
 <div class="container mt-5">
     <h1 style="text-align: center; margin-bottom: 30px;">All Comments</h1>
     <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-        <a href="{% url 'add_comment' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Comment</a>
         <ul class="item-list" style="list-style: none; padding: 0;">
             {% for comment in comments %}
             <li class="comment-item" style="margin: 10px 0;">
