@@ -1,21 +1,27 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
+from django.views.decorators.http import require_POST
+
 from .forms import TaskForm, ProjectForm, CommentForm, IssueForm, LabelForm
 from .models import Task, Project, Comment, Issue, Label, Notification
 from auth_app.models import CustomUser, Invitation
 from datetime import datetime, timedelta
-from auth_app.views import CustomUserCreationForm, login
+
 
 def index(request):
     return render(request, 'index.html')
 
+
 def about(request):
     return render(request, 'about.html')
 
+
 def contact(request):
     return render(request, 'contacts.html')
+
 
 @login_required
 def dashboard(request):
@@ -70,6 +76,7 @@ def create_task(request):
         'project_id': project_id if project_id else None
     })
 
+
 @login_required
 def update_task(request, task_id):
     task = get_object_or_404(Task, id=task_id, user=request.user)
@@ -82,13 +89,20 @@ def update_task(request, task_id):
         form = TaskForm(instance=task)
     return render(request, 'update_task.html', {'form': form, 'task': task})
 
+
 @login_required
 def delete_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id, user=request.user)
     if request.method == 'POST':
-        task.delete()
-        return redirect('dashboard')
-    return render(request, 'delete_task.html', {'task': task})
+        try:
+            task = get_object_or_404(Task, id=task_id, user=request.user)
+            task.delete()
+            return JsonResponse({'success': True, 'message': 'Task deleted successfully'})
+        except Task.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Task not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
 
 @login_required
 def complete_task(request, task_id):
@@ -98,6 +112,7 @@ def complete_task(request, task_id):
         task.save()
         return redirect('dashboard')
     return redirect('dashboard')
+
 
 @login_required
 def create_project(request):
@@ -130,6 +145,7 @@ def create_project(request):
         return redirect('dashboard')
     return redirect('dashboard')
 
+
 @login_required
 def update_project(request, project_id):
     project = get_object_or_404(Project, id=project_id, owner=request.user)
@@ -142,6 +158,7 @@ def update_project(request, project_id):
         form = ProjectForm(instance=project)
     return render(request, 'update_project.html', {'form': form, 'project': project})
 
+
 @login_required
 def delete_project(request, project_id):
     project = get_object_or_404(Project, id=project_id, owner=request.user)
@@ -150,47 +167,101 @@ def delete_project(request, project_id):
         return redirect('dashboard')
     return render(request, 'delete_project.html', {'project': project})
 
+
 @login_required
+@require_POST
 def add_comment(request):
     if request.method == 'POST':
         text = request.POST.get('text')
-        parent_id = request.POST.get('parent')
-        task_id = request.POST.get('task')
+        task_id = request.POST.get('task_id')
+        project_id = request.POST.get('project_id')
+        parent_id = request.POST.get('parent_id')
 
         if not text or not text.strip():
-            return render(request, 'add_comment.html', {'error': 'Comment text cannot be empty'})
+            return JsonResponse({'success': False, 'error': 'Comment text cannot be empty'}, status=400)
 
-        parent = Comment.objects.get(id=parent_id) if parent_id else None
-        task = Task.objects.get(id=task_id) if task_id else None
+        try:
+            if task_id and project_id:
+                return JsonResponse({'success': False, 'error': 'Cannot comment on both task and project'}, status=400)
+            elif task_id:
+                task = Task.objects.get(id=task_id)
+                comment = Comment.objects.create(
+                    user=request.user,
+                    text=text,
+                    task=task,
+                    parent=Comment.objects.get(id=parent_id) if parent_id else None
+                )
+            elif project_id:
+                project = Project.objects.get(id=project_id)
+                comment = Comment.objects.create(
+                    user=request.user,
+                    text=text,
+                    project=project,
+                    parent=Comment.objects.get(id=parent_id) if parent_id else None
+                )
+            else:
+                return JsonResponse({'success': False, 'error': 'Task or project ID is required'}, status=400)
 
-        comment = Comment.objects.create(
-            user=request.user,
-            text=text,
-            task=task,
-            parent=parent
-        )
-        return redirect('dashboard')
-    return render(request, 'add_comment.html', {})
+            return JsonResponse({
+                'success': True,
+                'message': 'Comment added successfully',
+                'comment': {
+                    'id': comment.id,
+                    'text': comment.text,
+                    'created_at': comment.created_at.isoformat(),
+                    'author': comment.user.email if comment.user else None,
+                    'parent_id': comment.parent.id if comment.parent else None
+                }
+            })
+        except (Task.DoesNotExist, Project.DoesNotExist, Comment.DoesNotExist) as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
 
 @login_required
+@require_POST
 def update_comment(request, comment_id):
-    comment = Comment.objects.get(id=comment_id, user=request.user)
     if request.method == 'POST':
-        form = CommentForm(request.POST, request.FILES, instance=comment)
-        if form.is_valid():
-            form.save()
-            return redirect('dashboard')
-    else:
-        form = CommentForm(instance=comment)
-    return render(request, 'update_comment.html', {'form': form, 'comment': comment})
+        print(f"Updating comment with ID: {comment_id}")
+        try:
+            comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+            text = request.POST.get('text')
+            if text and text.strip():
+                comment.text = text
+                comment.save()
+                print(f"Comment {comment_id} updated successfully")
+                return JsonResponse({
+                    'success': True,
+                    'comment': {
+                        'id': comment.id,
+                        'text': comment.text,
+                        'created_at': comment.created_at.isoformat(),
+                        'author': comment.user.email if comment.user else None,
+                        'parent_id': comment.parent.id if comment.parent else None
+                    }
+                })
+            else:
+                return JsonResponse({'success': False, 'error': 'Comment text cannot be empty'}, status=400)
+        except Exception as e:
+            print(f"Error updating comment {comment_id}: {str(e)}")
+            return JsonResponse({'success': False, 'error': str(e)}, status=404)
 
 @login_required
+@require_POST
 def delete_comment(request, comment_id):
-    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
     if request.method == 'POST':
-        comment.delete()
-        return redirect('dashboard')
-    return render(request, 'delete_comment.html', {'comment': comment})
+        print(f"Deleting comment with ID: {comment_id}")
+        try:
+            comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+            comment.delete()
+            print(f"Comment {comment_id} deleted successfully")
+            return JsonResponse({'success': True, 'message': 'Comment deleted'})
+        except Exception as e:
+            print(f"Error deleting comment {comment_id}: {str(e)}")  # Лог ошибки
+            return JsonResponse({'success': False, 'error': str(e)}, status=404)
+
 
 @login_required
 def add_issue(request):
@@ -205,6 +276,7 @@ def add_issue(request):
         form = IssueForm()
     return render(request, 'add_issue.html', {'form': form})
 
+
 @login_required
 def update_issue(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, user=request.user)
@@ -216,6 +288,7 @@ def update_issue(request, issue_id):
     else:
         form = IssueForm(instance=issue)
     return render(request, 'update_issue.html', {'form': form, 'issue': issue})
+
 
 @login_required
 def delete_issue(request, issue_id):
@@ -247,7 +320,7 @@ def add_label(request):
 
 @login_required
 def update_label(request, label_id):
-    label = get_object_or_404(Label, id=label_id)  
+    label = get_object_or_404(Label, id=label_id)
     if request.method == 'POST':
         form = LabelForm(request.POST, instance=label)
         if form.is_valid():
@@ -259,7 +332,7 @@ def update_label(request, label_id):
 
 @login_required
 def delete_label(request, label_id):
-    label = get_object_or_404(Label, id=label_id)  
+    label = get_object_or_404(Label, id=label_id)
     if request.method == 'POST':
         label.delete()
         return redirect('dashboard')
@@ -291,13 +364,12 @@ def create_invitation(request):
             return redirect('dashboard')
     return render(request, 'create_invitation.html')
 
-
 @login_required
 def accept_friend_invitation(request, invitation_id):
     invitation = get_object_or_404(Invitation, id=invitation_id, invitation_type='friendship', is_used=False)
     if invitation.recipient_email != request.user.email:
-        return redirect('dashboard') 
-    
+        return redirect('dashboard')
+
     sender = invitation.sender
     recipient = request.user
     if sender not in recipient.friends.all():
@@ -305,7 +377,7 @@ def accept_friend_invitation(request, invitation_id):
 
     invitation.is_used = True
     invitation.save()
-    
+
     other_invitations = Invitation.objects.filter(
         sender=sender,
         recipient_email=recipient.email,
@@ -315,7 +387,7 @@ def accept_friend_invitation(request, invitation_id):
     for inv in other_invitations:
         inv.is_used = True
         inv.save()
-    
+
     return redirect('dashboard')
 
 @login_required
@@ -365,17 +437,97 @@ def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id, owner=request.user)
     return render(request, 'project_detail.html', {'project': project})
 
+
 @login_required
 def comment_detail(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, user=request.user)
     return render(request, 'comment_detail.html', {'comment': comment})
+
 
 @login_required
 def issue_detail(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, user=request.user)
     return render(request, 'issue_detail.html', {'issue': issue})
 
+
 @login_required
 def label_detail(request, label_id):
     label = get_object_or_404(Label, id=label_id, tasks__user=request.user)
     return render(request, 'label_detail.html', {'label': label})
+
+
+def task_list(request):
+    tasks = Task.objects.all()
+    return render(request, 'task_list.html', {'tasks': tasks})
+
+
+def project_list(request):
+    projects = Project.objects.all()
+    return render(request, 'project_list.html', {'projects': projects})
+
+
+def comment_list(request):
+    comments = Comment.objects.filter(parent__isnull=True)
+    return render(request, 'comment_list.html', {'comments': comments})
+
+
+def issue_list(request):
+    issues = Issue.objects.all()
+    return render(request, 'issue_list.html', {'issues': issues})
+
+
+def label_list(request):
+    labels = Label.objects.all()
+    return render(request, 'label_list.html', {'labels': labels})
+
+
+@login_required
+def load_more_comments(request):
+    project_id = request.GET.get('project_id')
+    offset = int(request.GET.get('offset', 0))
+    limit = int(request.GET.get('limit', 6))
+
+    try:
+        project = Project.objects.get(id=project_id)
+        comments = project.comments.all().order_by('-created_at')[offset:offset + limit]
+        data = {
+            'comments': [],
+            'has_more': False
+        }
+        for comment in comments:
+            comment_data = {
+                'id': comment.id,
+                'text': comment.text,
+                'created_at': comment.created_at.isoformat(),
+                'author': comment.user.email if comment.user else None,
+                'replies': [
+                    {
+                        'id': reply.id,
+                        'text': reply.text,
+                        'created_at': reply.created_at.isoformat(),
+                        'author': reply.user.email if reply.user else None
+                    } for reply in comment.replies.all()[:3]
+                ]
+            }
+            data['comments'].append(comment_data)
+        if project.comments.count() > offset + limit:
+            data['has_more'] = True
+        return JsonResponse(data)
+    except Project.DoesNotExist:
+        return JsonResponse({'error': 'Project not found'}, status=404)
+
+@login_required
+def load_comment_options(request):
+    project_id = request.GET.get('project_id')
+    try:
+        project = Project.objects.get(id=project_id)
+        options = []
+        for comment in project.comments.all():
+            truncated_text = comment.text[:20] + '...' if len(comment.text) > 20 else comment.text
+            options.append(f'<option value="{comment.id}">{truncated_text}</option>')
+            for reply in comment.replies.all():
+                truncated_reply = reply.text[:20] + '...' if len(reply.text) > 20 else reply.text
+                options.append(f'<option value="{reply.id}">↳ {truncated_reply}</option>')
+        return JsonResponse({'options': options})
+    except Project.DoesNotExist:
+        return JsonResponse({'error': 'Project not found'}, status=404)

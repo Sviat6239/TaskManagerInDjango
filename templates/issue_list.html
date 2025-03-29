@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tasker - All Issues{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 style="text-align: center; margin-bottom: 30px;">All Issues</h1>
+    <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <a href="{% url 'add_issue' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Issue</a>
+        <ul class="item-list" style="list-style: none; padding: 0;">
+            {% for issue in issues %}
+            <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                <a href="{% url 'issue_detail' issue.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                    {{ issue.text|truncatechars:20 }} {% if issue.closed %}(Closed){% endif %}
+                </a>
+                <div>
+                    <a href="{% url 'update_issue' issue.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                    <a href="{% url 'delete_issue' issue.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Delete</a>
+                    <a href="{% url 'close_issue' issue.id %}" style="padding: 5px 10px; background-color: #ffc107; color: #fff; text-decoration: none; border-radius: 3px;">{% if issue.closed %}Reopen{% else %}Close{% endif %}</a>
+                </div>
+            </li>
+            {% empty %}
+            <li style="margin: 10px 0;">No issues yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s ease;
+    }
+    .item-button:hover {
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}

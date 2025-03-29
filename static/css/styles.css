@@ -11,12 +11,12 @@
 
 .dark-mode {
     --bg-color: #001f3e;
-    --text-color: #f5f5dd;
+    --text-color: #e1dca0;
     --accent1: #397768;
     --accent2: #24302e;
     --jumbotron-bg: #24302e;
     --button-bg: #0056b3;
-    --button-text: #f5f5dd;
+    --button-text: #ffffff;
     --toggler-icon-bg: #f5f5dd;
 }
 

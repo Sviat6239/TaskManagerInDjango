@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tasker - All Comments{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 style="text-align: center; margin-bottom: 30px;">All Comments</h1>
+    <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <ul class="item-list" style="list-style: none; padding: 0;">
+            {% for comment in comments %}
+            <li class="comment-item" style="margin: 10px 0;">
+                <div class="comment-content" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+                    <a href="{% url 'comment_detail' comment.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                        {{ comment.text }}
+                    </a>
+                    <div>
+                        <a href="{% url 'update_comment' comment.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                        <a href="{% url 'delete_comment' comment.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                    </div>
+                </div>
+                {% for reply in comment.replies.all %}
+                <div class="comment-reply" style="padding-left: 40px; margin-top: 10px;">
+                    <div class="comment-content" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background-color: #e9ecef; border-radius: 5px;">
+                        <a href="{% url 'comment_detail' reply.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #e9ecef; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                            {{ reply.text }}
+                        </a>
+                        <div>
+                            <a href="{% url 'update_comment' reply.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                            <a href="{% url 'delete_comment' reply.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </li>
+            {% empty %}
+            <li style="margin: 10px 0;">No comments yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s ease;
+    }
+    .item-button:hover {
+        opacity: 0.8;
+    }
+    .comment-reply {
+        border-left: 2px solid #007bff;
+    }
+</style>
+{% endblock %}

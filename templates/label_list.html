@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tasker - All Labels{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 style="text-align: center; margin-bottom: 30px;">All Labels</h1>
+    <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <a href="{% url 'add_label' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Label</a>
+        <ul class="item-list" style="list-style: none; padding: 0;">
+            {% for label in labels %}
+            <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                <a href="{% url 'label_detail' label.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: {{ label.color }}; color: #fff; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                    {{ label.name }}
+                </a>
+                <div>
+                    <a href="{% url 'update_label' label.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
+                    <a href="{% url 'delete_label' label.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                </div>
+            </li>
+            {% empty %}
+            <li style="margin: 10px 0;">No labels yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s ease;
+    }
+    .item-button:hover {
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}

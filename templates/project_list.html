@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tasker - All Projects{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 style="text-align: center; margin-bottom: 30px;">All Projects</h1>
+    <div class="card">
+        <a href="{% url 'create_project' %}" class="create-btn">Create Project</a>
+        <ul class="item-list">
+            {% for project in projects %}
+            <li>
+                <a href="{% url 'project_detail' project.id %}" class="item-button">
+                    {{ project.name }} (Tasks: {% for task in project.tasks.all %}{{ task.title }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %})
+                </a>
+                <div class="action-buttons">
+                    <a href="{% url 'update_project' project.id %}" class="edit-btn">Edit</a>
+                    <a href="{% url 'delete_project' project.id %}" class="delete-btn">Delete</a>
+                    <button class="comment-btn" data-project-id="{{ project.id }}">Comment</button>
+                    <button class="label-btn" data-project-id="{{ project.id }}">Add Label</button>
+                </div>
+            </li>
+            {% empty %}
+            <li>No projects yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Comment Form (Hidden by default) -->
+    <div id="commentFormContainer" style="display: none;">
+        <form id="commentForm" method="POST" class="project-form">
+            {% csrf_token %}
+            <input type="hidden" name="project_id" id="commentProjectId">
+            <div class="form-group">
+                <label for="commentText">Comment:</label>
+                <textarea id="commentText" name="text" class="form-control" rows="3" placeholder="Write your comment..." required></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Submit Comment</button>
+            <button type="button" class="cancel-btn" id="cancelComment">Cancel</button>
+        </form>
+    </div>
+
+    <!-- Label Form (Hidden by default) -->
+    <div id="labelFormContainer" style="display: none;">
+        <form id="labelForm" method="POST" class="project-form">
+            {% csrf_token %}
+            <input type="hidden" name="project_id" id="labelProjectId">
+            <div class="form-group">
+                <label for="existingLabel">Select Existing Label:</label>
+                <select id="existingLabel" name="existing_label" class="form-control">
+                    <option value="">-- Select an existing label --</option>
+                    {% for label in labels %}
+                    <option value="{{ label.id }}">{{ label.name }} ({{ label.color }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="newLabelName">Or Create New Label:</label>
+                <input type="text" id="newLabelName" name="new_label_name" class="form-control" placeholder="New Label Name">
+            </div>
+            <div class="form-group">
+                <label for="newLabelColor">Label Color:</label>
+                <input type="color" id="newLabelColor" name="new_label_color" class="form-control" value="#ff0000">
+            </div>
+            <button type="submit" class="submit-btn">Add Label</button>
+            <button type="button" class="cancel-btn" id="cancelLabel">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.card {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.create-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.create-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.03);
+}
+
+.item-list {
+    list-style: none;
+    padding: 0;
+}
+
+.item-list li {
+    margin: 12px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.item-list li:hover {
+    background-color: var(--accent2);
+}
+
+.item-button {
+    flex-grow: 1;
+    padding: 10px;
+    background-color: transparent;
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: 6px;
+    display: block;
+    transition: color 0.3s ease;
+}
+
+.item-button:hover {
+    color: var(--accent1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-btn,
+.delete-btn,
+.comment-btn,
+.label-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+}
+
+.edit-btn {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.comment-btn {
+    background-color: #17a2b8;
+    color: #fff;
+    border: none;
+}
+
+.label-btn {
+    background-color: #ffc107;
+    color: #fff;
+    border: none;
+}
+
+.edit-btn:hover,
+.delete-btn:hover,
+.comment-btn:hover,
+.label-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.project-form {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--button-bg);
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    outline: none;
+}
+
+.submit-btn {
+    padding: 12px 24px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.03);
+}
+
+.cancel-btn {
+    padding: 12px 24px;
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-left: 10px;
+}
+
+.cancel-btn:hover {
+    background-color: #5a6268;
+    transform: scale(1.03);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const commentButtons = document.querySelectorAll('.comment-btn');
+    const labelButtons = document.querySelectorAll('.label-btn');
+    const commentFormContainer = document.getElementById('commentFormContainer');
+    const labelFormContainer = document.getElementById('labelFormContainer');
+    const commentForm = document.getElementById('commentForm');
+    const labelForm = document.getElementById('labelForm');
+    const commentProjectId = document.getElementById('commentProjectId');
+    const labelProjectId = document.getElementById('labelProjectId');
+    const cancelCommentBtn = document.getElementById('cancelComment');
+    const cancelLabelBtn = document.getElementById('cancelLabel');
+
+    // Show Comment Form
+    commentButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const projectId = button.getAttribute('data-project-id');
+            commentProjectId.value = projectId;
+            commentFormContainer.style.display = 'block';
+            labelFormContainer.style.display = 'none';
+            commentForm.action = "{% url 'add_comment' %}"; // Ensure the URL is correct
+        });
+    });
+
+    // Show Label Form
+    labelButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const projectId = button.getAttribute('data-project-id');
+            labelProjectId.value = projectId;
+            labelFormContainer.style.display = 'block';
+            commentFormContainer.style.display = 'none';
+            labelForm.action = "{% url 'add_label' %}"; // Ensure the URL is correct
+        });
+    });
+
+    // Cancel Comment Form
+    cancelCommentBtn.addEventListener('click', () => {
+        commentFormContainer.style.display = 'none';
+        commentForm.reset();
+    });
+
+    // Cancel Label Form
+    cancelLabelBtn.addEventListener('click', () => {
+        labelFormContainer.style.display = 'none';
+        labelForm.reset();
+    });
+});
+</script>
+{% endblock %}

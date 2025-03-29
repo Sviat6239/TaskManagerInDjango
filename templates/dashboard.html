@@ -6,40 +6,34 @@
 {% block content %}
 <div class="container mt-5">
     <h1 style="text-align: center; margin-bottom: 30px;">Tasker Dashboard</h1>
-    <div class="dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
-
+    <div class="dashboard">
         <!-- Tasks Section -->
-        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-            <h3 style="margin: 0 0 15px; color: #333;">Tasks</h3>
-            <a href="{% url 'create_task' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Create Task</a>
-            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+        <div class="card">
+            <h3>Tasks</h3>
+            <a href="{% url 'create_task' %}">Create Task</a>
+            <ul class="item-list">
                 {% for task in tasks %}
-                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <a href="{% url 'task_detail' task.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                <li>
+                    <a href="{% url 'task_detail' task.id %}" class="item-button">
                         {{ task.title }} {% if task.project_set.exists %} (in {{ task.project_set.first.name }}){% endif %}
                     </a>
                     <div>
-                        <a href="{% url 'update_task' task.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none;ACM
- border-radius: 3px; margin-right: 5px;">Edit</a>
-                        <a href="{% url 'delete_task' task.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                        <a href="{% url 'update_task' task.id %}">Edit</a>
+                        <a href="{% url 'delete_task' task.id %}">Delete</a>
                     </div>
                 </li>
                 {% empty %}
-                <li style="margin: 10px 0;">No tasks yet.</li>
+                <li>No tasks yet.</li>
                 {% endfor %}
             </ul>
-            {% if tasks|length > 6 %}
-            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
-            {% endif %}
+            <a href="{% url 'task_list' %}">View Full List</a>
         </div>
 
         <!-- Projects Section -->
-        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-            <h3 style="margin: 0 0 15px; color: #333;">Projects</h3>
-            <button id="createProjectBtn" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px; border: none; cursor: pointer;">Create Project</button>
-
-            <!-- Project Creation Form (Hidden by default) -->
-            <form id="projectForm" method="POST" action="{% url 'create_project' %}" style="display: none; margin-bottom: 15px;" class="project-form">
+        <div class="card">
+            <h3>Projects</h3>
+            <button id="createProjectBtn">Create Project</button>
+            <form id="projectForm" method="POST" action="{% url 'create_project' %}" class="project-form" style="display: none;">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="projectName">Project Name:</label>
@@ -66,178 +60,362 @@
                         <input type="text" name="new_tasks[]" class="form-control" placeholder="New Task Title">
                     </div>
                 </div>
-                <button type="button" id="addTaskBtn" style="padding: 5px 10px; background-color: #28a745; color: #fff; border: none; border-radius: 3px; margin-top: 5px;">Add Another Task</button>
-                <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; margin-top: 10px;">Save Project</button>
+                <button type="button" id="addTaskBtn">Add Another Task</button>
+                <button type="submit">Save Project</button>
             </form>
-
-            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+            <ul class="item-list">
                 {% for project in projects %}
-                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <a href="{% url 'project_detail' project.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                <li>
+                    <a href="{% url 'project_detail' project.id %}" class="item-button">
                         {{ project.name }} (Tasks: {% for task in project.tasks.all %}{{ task.title }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %})
                     </a>
                     <div>
-                        <a href="{% url 'update_project' project.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
-                        <a href="{% url 'delete_project' project.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                        <a href="{% url 'update_project' project.id %}">Edit</a>
+                        <a href="{% url 'delete_project' project.id %}">Delete</a>
                     </div>
                 </li>
                 {% empty %}
-                <li style="margin: 10px 0;">No projects yet.</li>
+                <li>No projects yet.</li>
                 {% endfor %}
             </ul>
-            {% if projects|length > 6 %}
-            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
-            {% endif %}
+            <a href="{% url 'project_list' %}">View Full List</a>
         </div>
 
         <!-- Comments Section -->
-        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-            <h3 style="margin: 0 0 15px; color: #333;">Comments</h3>
-            <a href="{% url 'add_comment' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Comment</a>
-            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+        <div class="card">
+            <h3>Comments</h3>
+            <ul class="item-list">
                 {% for comment in comments %}
                 {% if not comment.parent %}
-                <li class="comment-item" style="margin: 10px 0;">
-                    <div class="comment-content" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
-                        <a href="{% url 'comment_detail' comment.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
-                            {{ comment.text }}
+                <li class="comment-item">
+                    <div class="comment-content">
+                        <a href="{% url 'comment_detail' comment.id %}" class="item-button comment-text">
+                            {{ comment.text|truncatechars:30 }}
                         </a>
                         <div>
-                            <button class="reply-btn" style="padding: 5px 10px; background-color: #17a2b8; color: #fff; border: none; border-radius: 3px; margin-right: 5px; cursor: pointer;">Reply</button>
-                            <a href="{% url 'update_comment' comment.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
-                            <a href="{% url 'delete_comment' comment.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                            <button class="reply-btn">Reply</button>
+                            <a href="{% url 'update_comment' comment.id %}">Edit</a>
+                            <a href="{% url 'delete_comment' comment.id %}">Delete</a>
                         </div>
                     </div>
-                    <!-- Reply Form (Hidden by default) -->
-                    <form class="reply-form" method="POST" action="{% url 'add_comment' %}" style="display: none; margin-top: 10px; padding-left: 20px;">
+                    <form class="reply-form" method="POST" action="{% url 'add_comment' %}" style="display: none;">
                         {% csrf_token %}
                         <input type="hidden" name="parent" value="{{ comment.id }}">
                         <textarea name="text" class="form-control" rows="2" placeholder="Write your reply..." required></textarea>
-                        <button type="submit" style="padding: 5px 10px; background-color: #007bff; color: #fff; border: none; border-radius: 3px; margin-top: 5px;">Submit Reply</button>
+                        <button type="submit">Submit Reply</button>
                     </form>
-                    <!-- Nested Comments -->
                     {% for reply in comment.replies.all %}
-                    <div class="comment-reply" style="padding-left: 40px; margin-top: 10px;">
-                        <div class="comment-content" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background-color: #e9ecef; border-radius: 5px;">
-                            <a href="{% url 'comment_detail' reply.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #e9ecef; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
-                                {{ reply.text }}
+                    <div class="comment-reply">
+                        <div class="comment-content">
+                            <a href="{% url 'comment_detail' reply.id %}" class="item-button comment-text">
+                                {{ reply.text|truncatechars:50 }}
                             </a>
                             <div>
-                                <button class="reply-btn" style="padding: 5px 10px; background-color: #17a2b8; color: #fff; border: none; border-radius: 3px; margin-right: 5px; cursor: pointer;">Reply</button>
-                                <a href="{% url 'update_comment' reply.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
-                                <a href="{% url 'delete_comment' reply.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                                <button class="reply-btn">Reply</button>
+                                <a href="{% url 'update_comment' reply.id %}">Edit</a>
+                                <a href="{% url 'delete_comment' reply.id %}">Delete</a>
                             </div>
                         </div>
-                        <form class="reply-form" method="POST" action="{% url 'add_comment' %}" style="display: none; margin-top: 10px; padding-left: 20px;">
+                        <form class="reply-form" method="POST" action="{% url 'add_comment' %}" style="display: none;">
                             {% csrf_token %}
                             <input type="hidden" name="parent" value="{{ reply.id }}">
                             <textarea name="text" class="form-control" rows="2" placeholder="Write your reply..." required></textarea>
-                            <button type="submit" style="padding: 5px 10px; background-color: #007bff; color: #fff; border: none; border-radius: 3px; margin-top: 5px;">Submit Reply</button>
+                            <button type="submit">Submit Reply</button>
                         </form>
                     </div>
                     {% endfor %}
                 </li>
                 {% endif %}
                 {% empty %}
-                <li style="margin: 10px 0;">No comments yet.</li>
+                <li>No comments yet.</li>
                 {% endfor %}
             </ul>
-            {% if comments|length > 6 %}
-            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
-            {% endif %}
+            <a href="{% url 'comment_list' %}">View Full List</a>
         </div>
 
         <!-- Issues Section -->
-        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-            <h3 style="margin: 0 0 15px; color: #333;">Issues</h3>
-            <a href="{% url 'add_issue' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Issue</a>
-            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+        <div class="card">
+            <h3>Issues</h3>
+            <ul class="item-list">
                 {% for issue in issues %}
-                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <a href="{% url 'issue_detail' issue.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: #f8f9fa; color: #333; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                <li>
+                    <a href="{% url 'issue_detail' issue.id %}" class="item-button">
                         {{ issue.text|truncatechars:20 }} {% if issue.closed %}(Closed){% endif %}
                     </a>
                     <div>
-                        <a href="{% url 'update_issue' issue.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
-                        <a href="{% url 'delete_issue' issue.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Delete</a>
-                        <a href="{% url 'close_issue' issue.id %}" style="padding: 5px 10px; background-color: #ffc107; color: #fff; text-decoration: none; border-radius: 3px;">{% if issue.closed %}Reopen{% else %}Close{% endif %}</a>
+                        <a href="{% url 'update_issue' issue.id %}">Edit</a>
+                        <a href="{% url 'delete_issue' issue.id %}">Delete</a>
+                        <a href="{% url 'close_issue' issue.id %}">{% if issue.closed %}Reopen{% else %}Close{% endif %}</a>
                     </div>
                 </li>
                 {% empty %}
-                <li style="margin: 10px 0;">No issues yet.</li>
+                <li>No issues yet.</li>
                 {% endfor %}
             </ul>
-            {% if issues|length > 6 %}
-            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
-            {% endif %}
+            <a href="{% url 'issue_list' %}">View Full List</a>
         </div>
 
         <!-- Labels Section -->
-        <div class="card" style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-            <h3 style="margin: 0 0 15px; color: #333;">Labels</h3>
-            <a href="{% url 'add_label' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-bottom: 15px;">Add Label</a>
-            <ul class="item-list" style="list-style: none; padding: 0; max-height: 300px; overflow: hidden;">
+        <div class="card">
+            <h3>Labels</h3>
+            <ul class="item-list">
                 {% for label in labels %}
-                <li style="margin: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <a href="{% url 'label_detail' label.id %}" class="item-button" style="flex-grow: 1; padding: 8px; background-color: {{ label.color }}; color: #fff; text-decoration: none; border-radius: 5px; margin-right: 10px; display: block;">
+                <li>
+                    <a href="{% url 'label_detail' label.id %}" class="item-button" style="background-color: {{ label.color }}; color: #fff;">
                         {{ label.name }}
                     </a>
                     <div>
-                        <a href="{% url 'update_label' label.id %}" style="padding: 5px 10px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 3px; margin-right: 5px;">Edit</a>
-                        <a href="{% url 'delete_label' label.id %}" style="padding: 5px 10px; background-color: #dc3545; color: #fff; text-decoration: none; border-radius: 3px;">Delete</a>
+                        <a href="{% url 'update_label' label.id %}">Edit</a>
+                        <a href="{% url 'delete_label' label.id %}">Delete</a>
                     </div>
                 </li>
                 {% empty %}
-                <li style="margin: 10px 0;">No labels yet.</li>
+                <li>No labels yet.</li>
                 {% endfor %}
             </ul>
-            {% if labels|length > 6 %}
-            <button class="show-more" style="display: block; margin: 10px auto; padding: 5px 15px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Show More</button>
-            {% endif %}
+            <a href="{% url 'label_list' %}">View Full List</a>
         </div>
     </div>
 </div>
 
 <style>
-    .card:hover {
-        transform: translateY(-5px);
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
+    padding: 20px;
+}
+
+.card {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.card h3 {
+    margin: 0 0 20px;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.card a[href*='create'],
+.card a[href*='add'],
+#createProjectBtn {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card a[href*='create']:hover,
+.card a[href*='add']:hover,
+#createProjectBtn:hover {
+    background-color: #0056b3;
+    transform: scale(1.03);
+    opacity: 1;
+}
+
+.item-list {
+    list-style: none;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent1) #f1f1f1;
+}
+
+.item-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.item-list::-webkit-scrollbar-thumb {
+    background-color: var(--accent1);
+    border-radius: 4px;
+}
+
+.item-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.item-list li {
+    margin: 12px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #0081ff;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.item-list li:hover {
+    background-color: var(--accent2);
+}
+
+.item-button {
+    flex-grow: 1;
+    padding: 10px;
+    background-color: transparent;
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: 6px;
+    display: block;
+    transition: color 0.3s ease;
+}
+
+.item-button:hover {
+    color: var(--accent1);
+}
+
+.comment-text {
+    max-width: 100%;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.item-list li a[href*='update'],
+.item-list li a[href*='delete'],
+.item-list li a[href*='close'],
+.reply-btn {
+    padding: 6px 12px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.item-list li a[href*='update'] {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.item-list li a[href*='delete'] {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.item-list li a[href*='close'] {
+    background-color: #ffc107;
+    color: #fff;
+}
+
+.reply-btn {
+    background-color: var(--accent1);
+    color: var(--button-text);
+    border: none;
+    cursor: pointer;
+}
+
+.item-list li a[href*='update']:hover,
+.item-list li a[href*='delete']:hover,
+.item-list li a[href*='close']:hover,
+.reply-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.show-more {
+    display: block;
+    margin: 15px auto;
+    padding: 8px 20px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.show-more:hover {
+    background-color: #0056b3;
+    transform: scale(1.03);
+}
+
+.show-more.hidden {
+    display: none;
+}
+
+.card a[href*='list'] {
+    display: block;
+    margin: 15px auto;
+    padding: 8px 20px;
+    background-color: var(--accent1);
+    color: var(--button-text);
+    text-decoration: none;
+    border-radius: 6px;
+    text-align: center;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.card a[href*='list']:hover {
+    background-color: #2d7d66;
+    transform: scale(1.03);
+}
+
+.project-form .form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--button-bg);
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    outline: none;
+}
+
+.comment-reply {
+    padding-left: 30px;
+    margin-top: 12px;
+    border-left: 3px solid var(--accent1);
+}
+
+.comment-content {
+    padding: 12px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.comment-content:hover {
+    background-color: #e5e7eb;
+}
+
+@media (max-width: 767px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+        padding: 15px;
     }
-    .card a:hover, .reply-btn:hover, .item-button:hover {
-        opacity: 0.8;
+
+    .card {
+        padding: 20px;
     }
-    .item-list.expanded {
-        max-height: none;
+
+    .item-list {
+        max-height: 280px;
     }
-    .show-more.hidden {
-        display: none;
-    }
-    .form-group {
-        margin-bottom: 15px;
-    }
-    .form-control {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    .new-task {
-        margin-bottom: 10px;
-    }
-    .comment-item {
-        border-bottom: 1px solid #e9ecef;
-    }
-    .comment-content {
-        transition: background-color 0.3s ease;
-    }
-    .comment-content:hover {
-        background-color: #e2e6ea;
-    }
-    .comment-reply {
-        border-left: 2px solid #007bff;
-    }
-    .item-button {
-        transition: background-color 0.3s ease;
-    }
+}
 </style>
 
 <script>
@@ -251,27 +429,12 @@
             }
         });
 
-        // Show More functionality
-        document.querySelectorAll('.show-more').forEach(button => {
-            button.addEventListener('click', () => {
-                const list = button.previousElementSibling;
-                list.classList.toggle('expanded');
-                if (list.classList.contains('expanded')) {
-                    button.textContent = 'Show Less';
-                } else {
-                    button.textContent = 'Show More';
-                }
-            });
-        });
-
-        // Toggle Project Form
         const createProjectBtn = document.getElementById('createProjectBtn');
         const projectForm = document.getElementById('projectForm');
         createProjectBtn.addEventListener('click', () => {
             projectForm.style.display = projectForm.style.display === 'none' ? 'block' : 'none';
         });
 
-        // Add New Task Input
         const addTaskBtn = document.getElementById('addTaskBtn');
         const newTasksContainer = document.getElementById('newTasksContainer');
         addTaskBtn.addEventListener('click', () => {
@@ -281,7 +444,6 @@
             newTasksContainer.appendChild(newTaskDiv);
         });
 
-        // Toggle Reply Form
         document.querySelectorAll('.reply-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const replyForm = button.parentElement.nextElementSibling;
